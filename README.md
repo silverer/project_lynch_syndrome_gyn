@@ -1,6 +1,6 @@
 # Markov Simulation Model: Cost-effectiveness of surgical management strategies for Lynch Syndrome (LS)-associated GYN cancer
 
-### Jason D. Wright, Elisabeth R. Silver, Fay Kastrinos, & Chin Hur (2020)
+### Jason D. Wright, Elisabeth R. Silver, Chin Hur, & Fay Kastrinos (2020)
 
 ## File Structure
 

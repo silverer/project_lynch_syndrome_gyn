@@ -77,8 +77,7 @@ def create_risk_spreadsheet():
     # Close the Pandas Excel writer and output the Excel file.
     writer.close()
     return risk_oc_df, risk_ec_df
-    
-#oc, ec = create_risk_spreadsheet()
+
 def beta_dist(mean, sd):
     alpha = ((1 - mean)/sd - 1/mean)**2
     beta = alpha * (1/mean - 1)
@@ -141,9 +140,9 @@ def generate_cost_sens_params(costs = ps.raw_costs):
     temp.to_csv(ps.data_repo/'cost_params_temp.csv')
     return temp
         
+    
+#oc, ec = create_risk_spreadsheet()
+#generate_sens_params()
+#generate_cost_sens_params()
 
 
-# =============================================================================
-# dists = generate_sens_params()
-# dists.to_csv('dist_test.csv') 
-# =============================================================================
