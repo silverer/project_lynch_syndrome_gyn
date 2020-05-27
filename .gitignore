@@ -1,0 +1,4 @@
+src/__pycache__/*
+src/scratch*
+src/.DS_Store
+.DS_Store

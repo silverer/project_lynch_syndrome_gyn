@@ -1,0 +1,13 @@
+strat_label,pretty_label,hsbo_age,survey_age,hysterectomy_age,hysterectomy_alone,strat_colors,text_color,marker,text_marker,,
+"HSBO: 35, Survey: 30","Hyst-BSO: 35, Survey: 30",35,30,80,FALSE,#B298B9,k,p,pentagon,#1C2B2B,#8C8A8D
+"HSBO: 40, Survey: 30","Hyst-BSO: 40, Survey: 30",40,30,80,FALSE,#96A8B5,k,p,pentagon,#EBDEF0,#A5BBBF
+"HSBO: 50, Survey: 30","Hyst-BSO: 50, Survey: 30",50,30,80,FALSE,#546D6D,k,p,pentagon,#633974,#D4C7DD
+"HSBO: Never, Survey: 30",Survey Alone: 30,80,30,80,FALSE,#021A2C,k,p,pentagon,#633974,#98949A
+"HSBO: 35, Survey: Never",Hyst-BSO: 35,35,80,80,FALSE,#855692,k,X,x (filled),#466C6C,#BCB2C2
+"HSBO: 40, Survey: Never",Hyst-BSO: 40,40,80,80,FALSE,#BEB9D5,w,o,circle,#7EA6AC,#B4D2D8
+"HSBO: 50, Survey: Never",Hyst-BSO: 50,50,80,80,FALSE,#EBDEF0,k,s,square,#7F898B,#E0D1EA
+"HSBO: 40, Survey: 35","Hyst-BSO: 40, Survey: 35",40,35,80,FALSE,#29516D,k,p,pentagon,#F5EEF8,#E0D1EA
+"HSBO: 50, Survey: 35","Hyst-BSO: 50, Survey: 35",50,35,80,FALSE,#602870,k,p,pentagon,#884EA0,#A49EA7
+Nat Hist,No Intervention,80,80,80,FALSE,#91999E,w,d,thin_diamond,#D5D8DC,#9DAFB2
+"HSBO: Never, Survey: 35",Survey Alone: 35,80,35,80,FALSE,#0B324C,k,p,pentagon,#EBDEF0,#8E9799
+"Hyst+Salp: 40, Oophorectomy: 50",Two-Stage Approach,50,80,40,TRUE,c,k,^,triangle_up,#4A235A,#879A9A

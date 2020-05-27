@@ -1,0 +1,19 @@
+f_type,f_name,f_loc,description
+PSA_ICERS_ALL_GENES,icers_all_genes_psa,post_processing: process_psa_results,contains the ICERs from the PSA for every gene and PSA trial
+PSA_CEAC,cost_effectiveness_acceptab,post_processing: generate_wtp_threshs (called by: process_psa_results),contains the ICERs from the PSA for every gene at a given WTP (used for CEAC plotting)
+PSA_ID,PSA_outputs_w_ids,lynch_gyn_ICER: main,all PSA outputs with IDs assigned to each trial run
+PSA_OPTIM_ICERS_100k,{gene}_psa_outputs_{trials}_trials_v1.csv,post_processing: plot_psa_results_circle (called by process_psa_results),PSA outputs with optimal strategies at a 100k WTP
+PSA_OPTIM_QALYs,optimal_strats_psa_qalys,post_processing: process_psa_results,PSA outputs with optimal strategies based on QALYs
+PSA_ID_SUB,PSA_outputs_w_ids_subsample,lynch_gyn_ICER:main,subset of PSA outputs
+PSA_BC,psa_bc_variability,post_processing: process_psa_results,PSA outputs for basecase optimal strategy (based on QALYs)
+OWSA_ICERS,owsa_outputs_icers,post_processing: process_owsa_results (called by lynch_gyn_ICER: run_owsa),OWSA outputs for all genes (based on ICERs)
+OWSA_QALYs,owsa_outputs_qalys,post_processing: process_owsa_results_qalys,OWSA outputs for all genes (based on QALYs)
+OWSA_OUTS_PROBS,owsa_prob_outputs,lynch_gyn_ICER: get_all_owsa_results,Results from probability OWSA
+OWSA_OUTS_UTILS,owsa_util_outputs,lynch_gyn_ICER: get_agg_utils_util_owsa (called by: get_all_owsa_results),Results from utility OWSA
+OWSA_OUTS_COSTS,owsa_cost_outputs,lynch_gyn_ICER: get_agg_utils_cost_owsa (called by: get_all_owsa_results),Results from cost OWSA
+OWSA_OUTS_ALL,owsa_raw_outputs,lynch_gyn_ICER: get_all_owsa_results,"Results from probability, utility, and cost OWSAs"
+BC_ICERS_W_DOM,icers_w_dominated_all_genes,lynch_gyn_ICER: get_icers_with_dominated (called by run_analysis_and_graph),Base case results: ICERs and outcomes for dominated strategies and non-dominated strategies
+BC_FMT_ICERS_W_DOM,all_gene_icers_formatted,lynch_gyn_ICER: run_analysis_and_graph,Formatted base case results: ICERs and outcomes for dominated strategies and non-dominated strategies
+BC_QALYs,base_case_all_outputs_qalys,lynch_gyn_ICER: run_analysis_and_graph,Base case results: QALYs and secondary outcomes for all genes and strategies
+BC_FMT_QALYs,base_case_qalys_formatted,post_processing: create_bc_output_table,Base case results: formatted (somewhat redundant with BC_FMT_ICERS)
+PSA_CE_ACC,psa_ce_acceptability,post_processing: process_psa_results,cost-effectiveness acceptability info for PSA
