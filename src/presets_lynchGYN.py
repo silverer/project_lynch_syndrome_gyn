@@ -74,7 +74,7 @@ CONNECTIVITY = pd.read_excel(data_io.CONNECT_MATRIX)
 EXCLUDE_NH = False
 #Determines whteher or not figures should be saved
 #Switch to False for testing
-SAVE_FIGS = False
+SAVE_FIGS = True
 
 class run_type:
     #preset for run type is natural history

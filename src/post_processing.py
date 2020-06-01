@@ -1258,8 +1258,10 @@ def create_bc_ax_qalys_cancer(gene_df_og, ax, sub_ax):
     gene_df = gene_df_og.copy()
     df = gene_df.sort_values(by = ps.QALY_COL, ascending=False)
     df = df.reset_index(drop = True)
+    
     x = df['strategy'].to_list()
     y1 = df[ps.QALY_COL].to_list()
+    
     y2 = df['Cancer Incidence'].to_list()
     #set the primary axis (QALYs)
     ax.plot(x, y1, c =  'b', marker = 'o', label = 'QALYs')
@@ -1270,25 +1272,42 @@ def create_bc_ax_qalys_cancer(gene_df_og, ax, sub_ax):
     ax.tick_params(axis ='x', rotation = 90)
     
     #Build graph with second y-axis 
-    sub_ax.set_ylabel('Cancer Incidence (%)', color = 'firebrick')
+    sub_ax.set_ylabel('Cancer Incidence', color = 'firebrick')
     sub_ax.yaxis.label.set_color('firebrick')
+    if gene_df.loc[0, 'gene'] != 'PMS2':
+        sub_ax.set_yticks(np.arange(0, 60, step = 10))
+    else:
+        sub_ax.set_yticks(np.arange(0, 25, step = 5))
+        
     sub_ax.set_ylim(bottom=0, top = max(y2)+5)
-    sub_ax.yaxis.set_major_formatter(mtick.PercentFormatter())
+    
+    fmt = '%.0f%%' # Format you want the ticks, e.g. '40%'
+    yticks = mtick.FormatStrFormatter(fmt)
+    sub_ax.yaxis.set_major_formatter(yticks)
+    #sub_ax.yaxis.set_major_formatter(mtick.PercentFormatter())
     sub_ax.tick_params(axis='y', colors='firebrick')
-    sub_ax.plot(x, y2, color = 'firebrick', marker = 's', label = 'Cancer Incidence (%)')
+    sub_ax.plot(x, y2, color = 'firebrick', marker = 's', label = 'Cancer Incidence')
     return ax, sub_ax
 
-def plot_basecase(output_df_og, together = False, column = ps.QALY_COL):
+def plot_basecase(output_df_og, together = False, column = ps.QALY_COL,
+                  select_strats = True):
     
     output_df = output_df_og.copy()
     
+        
     if ps.EXCLUDE_NH:
         output_df = output_df[output_df['strategy'] != 'Nat Hist']
         fname = f'qalys_cancer_incidence{ps.icer_version}.png'
     else:
         fname = f'qalys_cancer_incidence{ps.icer_version}_with_nh.png'
-        
+    
     output_df['strategy'] = output_df['strategy'].map(ps.STRATEGY_DICT)
+    
+    if select_strats:
+        cond = ((output_df['strategy'].str.contains('Survey Alone'))|
+                (output_df['strategy'].str.contains('Survey: 30')))
+        output_df = output_df[cond == False]
+    
     output_df['Cancer Incidence'] *= 100
     output_df['Cancer Mortality'] *= 100
     
@@ -1328,10 +1347,10 @@ def plot_basecase(output_df_og, together = False, column = ps.QALY_COL):
             plt.savefig(ps.dump_figs/fname, bbox_inches = 'tight', dpi = 300)
         plt.show()
         
-# =============================================================================
-# df = pd.read_csv(ps.dump/f"{ps.F_NAME_DICT['BC_QALYs']}{ps.icer_version}.csv")
-# plot_basecase(df, together = True)
-# =============================================================================
+#df = pd.read_csv(ps.dump/f"{ps.F_NAME_DICT['BC_QALYs']}{ps.icer_version}.csv")
+#plot_basecase(df, together = True)
+
+
 import regex as re
 def build_outputs_ax(df_dict, ax, gene, col):
     temp = df_dict.copy()
