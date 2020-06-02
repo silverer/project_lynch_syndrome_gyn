@@ -1299,7 +1299,7 @@ def plot_basecase(output_df_og, together = False, column = ps.QALY_COL,
         output_df = output_df[output_df['strategy'] != 'Nat Hist']
         fname = f'qalys_cancer_incidence{ps.icer_version}.png'
     else:
-        fname = f'qalys_cancer_incidence{ps.icer_version}_with_nh.png'
+        fname = f'qalys_cancer_incidence{ps.icer_version}_with_nh.jpg'
     
     output_df['strategy'] = output_df['strategy'].map(ps.STRATEGY_DICT)
     

@@ -781,6 +781,16 @@ def main():
     
     '''
     run_type sets the type of analysis
+    base case: The main analysis
+    thresh: Threshold sensitivity analyses. thresh_type specifies the type of 
+            threshold analysis.
+            Threshold analysis should be run from the command line.
+            To change utilities, add U to the front of the variable (e.g., U HSBO)
+            To change costs, add cost to the front of the variable (e.g., cost HSBO)
+            For variable names, see model_inputs.xlsx
+    owsa: One-way sensitivity analysis.
+    PSA: Probabilistic sensitivity analysis. This should be run from the
+            command line.
     '''
     run_type = 'base case'
     thresh_type = 'risk'
@@ -789,8 +799,8 @@ def main():
     
     if run_type == 'base case':
         #save dfs indicates whether the distribution matrices for 4 genes X 12 strategies should be saved
-        run_analysis_and_graph(save_dfs = False, plot_secondary = True,
-                               skip_iterate = True)
+        run_analysis_and_graph(save_dfs = True, plot_secondary = True,
+                               skip_iterate = False)
         
     elif run_type == 'thresh':
         if thresh_type == 'util':
