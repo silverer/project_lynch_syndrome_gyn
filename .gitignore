@@ -2,8 +2,8 @@ src/__pycache__/*
 src/scratch*
 src/.DS_Store
 .DS_Store
-figures/*.png
-figures/*.jpg
+figures/*
+!figures/.gitkeep
 psa_outs/*.csv
 psa_outs/*.png
 model_outs/*.csv
