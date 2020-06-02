@@ -2,6 +2,9 @@ src/__pycache__/*
 src/scratch*
 src/.DS_Store
 .DS_Store
-figures/*
-psa_outs/*
-model_outs/*
+figures/*.png
+figures/*.jpg
+psa_outs/*.csv
+psa_outs/*.png
+model_outs/*.csv
+model_outs/*.png
