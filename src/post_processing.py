@@ -1264,16 +1264,17 @@ def create_bc_ax_qalys_cancer(gene_df_og, ax, sub_ax):
     
     y2 = df['Cancer Incidence'].to_list()
     #set the primary axis (QALYs)
-    ax.plot(x, y1, c =  'b', marker = 'o', label = 'QALYs')
+    ax.plot(x, y1, marker = 'o', color = 'b',
+            label = 'QALYs')
     
-    ax.set_ylabel('QALYs', color = 'b')
+    ax.set_ylabel('QALYs')
     ax.yaxis.label.set_color('b')
     ax.tick_params(axis='y', colors='b')
     ax.tick_params(axis ='x', rotation = 90)
     
     #Build graph with second y-axis 
-    sub_ax.set_ylabel('Cancer Incidence', color = 'firebrick')
-    sub_ax.yaxis.label.set_color('firebrick')
+    sub_ax.set_ylabel('Cancer Incidence')
+    #sub_ax.yaxis.label.set_color('firebrick')
     if gene_df.loc[0, 'gene'] != 'PMS2':
         sub_ax.set_yticks(np.arange(0, 60, step = 10))
     else:
@@ -1286,20 +1287,64 @@ def create_bc_ax_qalys_cancer(gene_df_og, ax, sub_ax):
     sub_ax.yaxis.set_major_formatter(yticks)
     #sub_ax.yaxis.set_major_formatter(mtick.PercentFormatter())
     sub_ax.tick_params(axis='y', colors='firebrick')
-    sub_ax.plot(x, y2, color = 'firebrick', marker = 's', label = 'Cancer Incidence')
+    sub_ax.plot(x, y2, marker = 's', color = 'firebrick',
+                label = 'Cancer Incidence')
+    sub_ax.yaxis.label.set_color('firebrick')
     return ax, sub_ax
 
+def create_bc_ax_qalys_cancer_bw(gene_df_og, ax, sub_ax):
+    gene_df = gene_df_og.copy()
+    df = gene_df.sort_values(by = ps.QALY_COL, ascending=False)
+    df = df.reset_index(drop = True)
+    
+    x = df['strategy'].to_list()
+    y1 = df[ps.QALY_COL].to_list()
+    
+    y2 = df['Cancer Incidence'].to_list()
+    #set the primary axis (QALYs)
+    ax.plot(x, y1, marker = 'o', color = 'k',
+            label = 'QALYs')
+    
+    ax.set_ylabel('QALYs')
+    ax.yaxis.label.set_color('k')
+    ax.tick_params(axis='y', colors='k')
+    ax.tick_params(axis ='x', rotation = 90)
+    
+    #Build graph with second y-axis 
+    sub_ax.set_ylabel('Cancer Incidence')
+    #sub_ax.yaxis.label.set_color('firebrick')
+    if gene_df.loc[0, 'gene'] != 'PMS2':
+        sub_ax.set_yticks(np.arange(0, 60, step = 10))
+    else:
+        sub_ax.set_yticks(np.arange(0, 25, step = 5))
+        
+    sub_ax.set_ylim(bottom=0, top = max(y2)+5)
+    
+    fmt = '%.0f%%' # Format you want the ticks, e.g. '40%'
+    yticks = mtick.FormatStrFormatter(fmt)
+    sub_ax.yaxis.set_major_formatter(yticks)
+    #sub_ax.yaxis.set_major_formatter(mtick.PercentFormatter())
+    sub_ax.tick_params(axis='y', colors='k')
+    sub_ax.plot(x, y2, marker = 's',linestyle = 'dashed',
+                color = 'k',
+                label = 'Cancer Incidence')
+    sub_ax.yaxis.label.set_color('k')
+    return ax, sub_ax
+from matplotlib.lines import Line2D
 def plot_basecase(output_df_og, together = False, column = ps.QALY_COL,
-                  select_strats = True):
+                  select_strats = True, bw = True):
     
     output_df = output_df_og.copy()
     
         
     if ps.EXCLUDE_NH:
         output_df = output_df[output_df['strategy'] != 'Nat Hist']
-        fname = f'qalys_cancer_incidence{ps.icer_version}.png'
+        fname = f'qalys_cancer_incidence{ps.icer_version}.jpg'
     else:
-        fname = f'qalys_cancer_incidence{ps.icer_version}_with_nh.jpg'
+        if bw:
+            fname = f'qalys_cancer_incidence{ps.icer_version}_with_nh_bw.jpg'
+        else:
+            fname = f'qalys_cancer_incidence{ps.icer_version}_with_nh.jpg'
     
     output_df['strategy'] = output_df['strategy'].map(ps.STRATEGY_DICT)
     
@@ -1323,9 +1368,21 @@ def plot_basecase(output_df_og, together = False, column = ps.QALY_COL,
         temp = output_df[output_df['gene'] == ps.GENES[i]]
         temp = temp.reset_index(drop = True)
         if together:
-            ax_array[i], sub_ax_array[i] = create_bc_ax_qalys_cancer(temp, ax_array[i],
-                                                                        sub_ax_array[i])
+            if bw:
+                ax_array[i], sub_ax_array[i] = create_bc_ax_qalys_cancer_bw(temp, ax_array[i],
+                                                                            sub_ax_array[i])
+            else:
+                ax_array[i], sub_ax_array[i] = create_bc_ax_qalys_cancer(temp, ax_array[i],
+                                                                            sub_ax_array[i])
             ax_array[i].set_title(f"$\it{ps.GENES[i]}$")
+            if bw:
+                if i == 1:
+                    custom_legend = [Line2D([0], [0], color = 'k',
+                                            marker = 'o'),
+                                     Line2D([0], [0], color = 'k',
+                                            linestyle = 'dashed', marker = 's')]
+                    ax_array[i].legend(custom_legend, ['QALYs', 'Cancer\nIncidence'],
+                                       bbox_to_anchor = (1.3,.7))
         else:
             fig, ax = plt.subplots(figsize = (7, 7))
             sub_ax = ax.twinx()
@@ -1341,14 +1398,17 @@ def plot_basecase(output_df_og, together = False, column = ps.QALY_COL,
             
     if together:
         plt.suptitle(f"QALYs and Cancer Incidence by Strategy", y = 1.03)
+        
         plt.tight_layout()
         if ps.SAVE_FIGS:
             
             plt.savefig(ps.dump_figs/fname, bbox_inches = 'tight', dpi = 300)
         plt.show()
         
-#df = pd.read_csv(ps.dump/f"{ps.F_NAME_DICT['BC_QALYs']}{ps.icer_version}.csv")
-#plot_basecase(df, together = True)
+# =============================================================================
+# df = pd.read_csv(ps.dump/f"{ps.F_NAME_DICT['BC_QALYs']}{ps.icer_version}.csv")
+# plot_basecase(df, together = True, bw=True)
+# =============================================================================
 
 
 import regex as re
