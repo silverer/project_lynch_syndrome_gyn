@@ -46,7 +46,7 @@ def create_risk_spreadsheet():
     risk_index = []
     for i in old_risk_index:
         risk_index.append(str(int(i)))
-    writer = pd.ExcelWriter(ps.data_repo/'cancer_risk_rangesTEST.xlsx', 
+    writer = pd.ExcelWriter(ps.data_repo/'cancer_risk_ranges.xlsx', 
                             engine='xlsxwriter')
     
     for gene in ps.GENES:

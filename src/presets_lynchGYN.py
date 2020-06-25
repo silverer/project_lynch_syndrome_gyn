@@ -216,7 +216,7 @@ PARAMS_PSA.at['ec stage dist intervention',
 #### Set up and read in costs ####
 raw_costs = pd.read_excel(model_params, sheet_name = 'costs')
 
-blank_costs = pd.read_excel(model_params, sheet_name = 'cost_table_raw')
+blank_costs = pd.read_excel(model_params, sheet_name = 'blank_costs')
 
 #### Set up and read in utilities ####
 utilities = pd.read_excel(model_params, sheet_name = 'util_table_raw', 

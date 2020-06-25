@@ -40,3 +40,27 @@ The model contains the following directories:
 * connect_matrix.xlsx: Specifies the connectivity between health states.
 * blank_dmat.csv: Blank distribution matrix for setting up cost and utility multiplier tables.
 * bc_lifetime_risks.csv: Lists the basecase lifetime risk for each gene. Helps with formatting calibration plots.
+
+## Changing Model Inputs
+
+### Probabilties (other than cancer risk)
+
+Change the `params_PSA` and `param` sheets in `data/model_inputs.xlsx` (note: these sheets are separate to allow for testing wider ranges of values in the one-way sensitivity analysis than in the probabilistic sensitivity analysis). Remember to change both the base case value and the parameter's new upper and lower boundaries. 
+
+After changing these values, run the `generate_sens_params()` function in `src/one_time_scripts.py`. This generates alpha and beta parameters for the PSA. Make sure that the distributions produced look okay. If they don't look right, try changing the `multiplier` column in the `params_PSA` sheet. Once the parameters look good, copy and paste the resulting values (stored in `data/psa_params_temp.csv`) into the `params_PSA` sheet in `data/model_inputs.xlsx`.
+
+Another thing to note: cancer stage distributions are set manually. To change cancer stage distributions (stored in the `params` and `params_PSA` sheets of `data/model_inputs.xlsx`), just set new local, regional, and distant values as a comma-separated list. For risk of all-cause mortality after oophorectomy, be sure to remove any exceptions that skip over this parameter in `src/lynch_gyn_sens.py` and `src/one_time_scripts.py`.
+
+
+### Cancer risk
+
+Change the `data/raw_cancer_risk.xlsx` spreadsheet for each gene and cancer site. Note that you may need to also change the upper and lower boundaries of cancer risks as well (`max_risk` and `min_risk` columns). After changing this spreadsheet, run the `create_risk_spreadsheet()` function in `src/one_time_scripts.py`. This will save an updated spreadsheet with cancer risks and ranges for sensitivity analyses.
+
+### Costs
+
+In `model_inputs.xlsx`, change the sheet called `costs`. Then, run the `generate_cost_sens_params()` function in `src/one_time_scripts.py`. If the distributions look off, try changing the `gamma_scale` column in the `costs` spreadsheet and re-running the generator function.
+
+### Utilities
+
+In `model_inputs.xlsx`, change the sheets called `util_table_raw` to reflect the new base case value, `util_table_raw_low` for the new lower boundary, and `util_table_raw_upper` for the new upper boundary. 
+
