@@ -8,3 +8,4 @@ psa_outs/*.csv
 psa_outs/*.png
 model_outs/*.csv
 model_outs/*.png
+.vscode/*

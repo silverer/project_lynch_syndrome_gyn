@@ -130,10 +130,10 @@ def get_agg_utils(df_dict = 1, save = False, risk_levels = [0], col_to_change=0,
                   **kwargs):
     
     if type(df_dict) == int or type(df_dict) == float:
-        if len(risk_levels) > 1:
-            df_dict = sen.iterate_risk_levels(save = save, risk_levels = risk_levels)
-            
-        elif 'prob_owsa' in kwargs:
+        #if len(risk_levels) > 1:
+            #df_dict = sen.iterate_risk_levels(save = save, risk_levels = risk_levels)
+        if 'prob_owsa' in kwargs: 
+        #elif 'prob_owsa' in kwargs:
             #instantiates parameter dictionary with indices as keys and distributions as values
             new_param_dict = sen.set_owsa_probs()
             #iterates over optimal strategies for every new parameter value
@@ -170,8 +170,7 @@ def get_agg_utils(df_dict = 1, save = False, risk_levels = [0], col_to_change=0,
     
     cost_params = ps.raw_costs.copy()
     cost_params = cost_params.set_index(cost_params['param'])
-    #print(changed_param)
-    #print(param_value)
+    
     if 'prob_owsa' in kwargs:
         
         outputs = iterate_over_dist_dict(df_dict, new_qaly_df, cost_params,
@@ -792,7 +791,7 @@ def main():
     PSA: Probabilistic sensitivity analysis. This should be run from the
             command line.
     '''
-    run_type = 'base case'
+    run_type = 'owsa'
     thresh_type = 'risk'
     run = True
     plot = False
