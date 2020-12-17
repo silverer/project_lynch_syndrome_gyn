@@ -174,7 +174,30 @@ def check_beta_dist(params, val, sample_size, seed):
     below_vals = len(dist[dist < params.loc[val, 'low_bound']])
     above_vals = len(dist[dist > params.loc[val, 'up_bound']])
     
-    
+    if below_vals > 0 or above_vals > 0:
+        if val == 'risk oc tubal ligation':
+            print('check')
+        np.random.seed(seed*3)
+        #Replace out-of-bound values with new values
+        #Draw a much bigger random sample to avoid duplicate values as much as possible
+        tmp = np.random.beta(params.loc[val, 'alpha'], 
+                            params.loc[val, 'beta'], sample_size*3)
+        tmp = tmp[tmp < params.loc[val, 'up_bound']]
+        tmp = tmp[tmp > params.loc[val, 'low_bound']]
+        new_dist = dist[dist < params.loc[val, 'up_bound']]
+        new_dist = dist[dist > params.loc[val, 'low_bound']]
+        
+        both_dists = np.append(new_dist, tmp)
+        
+        if len(np.unique(both_dists)) > sample_size:
+            both_dists = np.unique(both_dists)
+            both_dists = np.random.choice(both_dists, sample_size, replace = False)
+            return 0, 0, both_dists
+        else:
+            both_dists =  np.random.choice(both_dists, sample_size, replace = False)
+            print(len(both_dists))
+            return 0, 0, both_dists
+        
     return below_vals, above_vals, dist
 
 #Sets PSA parameters based on the param distribution info 
@@ -335,7 +358,25 @@ def plot_dist_charts_from_dict(var_dict):
             plt.tight_layout()
             plt.show()
         
-#test = set_psa_params(10000)
+
+def generate_samples(sample_size):
+    param_dists = set_psa_params(10000)
+    samples_df = pd.DataFrame()
+    for k in param_dists.keys():
+        #The stage distributions are tempermental bc they're numpy arrays
+        if 'stage dist' in k:
+            samples_df[k] = None
+            samples_df[k] = samples_df[k].astype(object)
+            #Create new variables to concatenate into an array
+            samples_df['x'] = param_dists[k][0:,0]
+            samples_df['y'] = param_dists[k][0:,1]
+            samples_df['z'] =  param_dists[k][0:,2]
+            samples_df[k] = samples_df.apply(lambda r: tuple(r[['x', 'y', 'z']]), axis=1).apply(np.array)
+            samples_df = samples_df.drop(columns = ['x', 'y', 'z'])
+        else:
+            samples_df[k] = param_dists[k]
+    return samples_df
+
 #plot_dist_charts_from_dict(test)
 
 #sets thresholds for probabilities in threshold analyses

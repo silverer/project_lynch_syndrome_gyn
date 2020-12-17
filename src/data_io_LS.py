@@ -52,7 +52,7 @@ for (dirpath, dirnames, filenames) in os.walk(INPUT):
         if f.startswith('named_connect') and str(f[0]) != '~' and f.endswith("xls"):
             #print('found state names')
             STATE_NAMES = INPUT/f
-            print(STATE_NAMES)
+            #print(STATE_NAMES)
         if f.startswith('connect') and str(f[0]) != '~' and f.endswith("xls"):
             CONNECT_MATRIX = INPUT/f
         if f.startswith('filenames') and str(f[0]) != '~':

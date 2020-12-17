@@ -91,8 +91,15 @@ def generate_sens_params(params = ps.PARAMS_PSA, plot_params = 'all'):
     dist_info = params.copy()
     for i in temp_params.index:
         if 'risk ac death' not in i and 'lifetime risk' not in i and 'stage dist' not in i:
-            alpha, beta = beta_dist(params.loc[i, 'value'],
-                                         params.loc[i, 'value']*params.loc[i, 'multiplier'])
+            #set specific params for risk of OC post-Hyst BS
+            if 'tubal' in i:
+                alpha = 5
+                beta = 1
+            else:
+                alpha, beta = beta_dist(params.loc[i, 'value'],
+                                        params.loc[i, 'value']*params.loc[i, 'multiplier'])
+            print(i)
+            print(alpha, beta)
             test_dist = np.random.beta(alpha, beta, 1000)
             print('*'*30)
             print(i)
@@ -117,7 +124,7 @@ def generate_sens_params(params = ps.PARAMS_PSA, plot_params = 'all'):
                     plt.hist(test_dist)
                     plt.title(i)
                     plt.show()
-    dist_info.to_csv(ps.data_repo/'psa_params_temp.csv')
+    dist_info.to_csv(ps.data_repo/'psa_params_temp_v1.csv')
     return dist_info
 
 def get_gamma_params(mean, sd):
@@ -139,10 +146,11 @@ def generate_cost_sens_params(costs = ps.raw_costs):
         temp.loc[i, 'gamma_scale'] = scale
     temp.to_csv(ps.data_repo/'cost_params_temp.csv')
     return temp
-        
+
     
 #oc, ec = create_risk_spreadsheet()
-#generate_sens_params()
+#dist = generate_sens_params(plot_params=['risk oc tubal ligation'])
+#print(len(dist))
 #generate_cost_sens_params()
 
 
