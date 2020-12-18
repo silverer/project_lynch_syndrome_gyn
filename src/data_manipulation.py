@@ -29,8 +29,10 @@ def cell_to_list(cell_str):
 def excel_to_lists(path, sheet_name, col_name):
     df = pd.read_excel(path, sheet_name)
     x_data = df.iloc[:,0]
-    
-    y_data = df.loc[:, col_name]
+    try:
+        y_data = df.loc[:, col_name]
+    except:
+        y_data = df.loc[:, str(int(col_name))]
 
     # convert from data frame to list
     x = x_data.values.tolist()
