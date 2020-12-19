@@ -731,6 +731,47 @@ def run_PSA_mp(samples, seeds):
     
     return all_utils
 
+def run_PSA_mp_dfs(samples, seeds, dists):
+    start = time.time()
+    dt = datetime.datetime.now()
+    print(dt.strftime("%Y-%m-%d %H:%M"), '    running PSA')
+    #Split the probabilities into n = len(seeds) number of subsamples
+    #this will create n = len(seeds) chunks to feed into the simulator
+    dist_list = np.array_split(dists, len(seeds))
+    
+    #Runs, for example, samples of size 2 on 8 different cores simultaneously
+    #context manager opens and closes pool as jobs are completed
+    with mp.Pool(len(seeds)) as pool:
+        #run the PSA
+        df_pooled = pool.map(sen.iterate_strategies_PSA_mp_df, dist_list)
+        #make sure the df inputs are lists to pass with the random seeds
+        dfs = []
+        for i in range(0, len(df_pooled)):
+            dfs.append([df_pooled[i]])
+        utils = pool.starmap(get_agg_utils_PSA, zip(dfs, seeds))   
+        
+    end_1 = time.time()
+    dt = datetime.datetime.now()
+    print(dt.strftime("%Y-%m-%d %H:%M"), 
+          '    time to run samples and get utils: ', (end_1-start)/60)
+       
+    i = 0
+    for i in range(0, len(utils)):
+        if i == 0:
+            all_utils = utils[i].copy()
+        else:
+            all_utils = all_utils.append(utils[i].copy(), ignore_index = True)
+    one_seed = seeds[0]
+    total_samples = sum(samples)
+    
+    all_fname = f'full_util_outputs_psa_{total_samples}_samples_{one_seed}{ps.icer_version}.csv'
+    print(all_fname)
+    #save the results for every strategy and gene for the trials in the pool
+    all_utils.to_csv(ps.dump_psa/all_fname,
+                     index=False)
+    
+    return all_utils
+
 def run_owsa(owsa_results = 'none'):
     start = time.time()
     if type(owsa_results) == str:
@@ -791,7 +832,7 @@ def main():
     PSA: Probabilistic sensitivity analysis. This should be run from the
             command line.
     '''
-    run_type = 'owsa'
+    run_type = 'PSA'
     thresh_type = 'risk'
     run = True
     plot = False
@@ -848,8 +889,12 @@ def main():
         #having a sample size divisible by 8 is preferable for core distribution
         #80 * 125 = 10000 samples
         #add an extra few loops in case there are duplicate seeds
-        sample_size = 96
-        loops = 105
+        #sample_size should be divisible by the number of CPU's
+        #in each loop, n = sample_size samples will be run, but they'll be distributed
+        #across n = core_num number of cores
+        sample_size = 16
+        loops = 120
+        #loops = 105
         #loops = 128
         if mp.cpu_count() >= 32:
             core_num = 32
@@ -859,17 +904,24 @@ def main():
             print('running on 8 cores')
             
         each_sample = int(sample_size/core_num)
-        samples = np.full((loops, core_num), each_sample, dtype = int)    
+        samples = np.full((loops, core_num), each_sample, dtype = int)
+        
         #print(samples)
         seeds = np.random.choice(2000000, size = np.shape(samples), 
-                                 replace = False)   
+                                 replace = False)
+        #Generate inputs for probabilities
+        all_dists = sen.generate_samples(sample_size * loops)
+        dists = np.array_split(all_dists, loops)
+        #dists = np.array_split(all_dists, each_sample)
+        print(len(dists))
+        
         all_outputs = pd.DataFrame()
         start = time.time()
         i = 0
         for i in range(0, loops):
             print(i)
-            temp_outputs = run_PSA_mp(samples[i, :], seeds[i, :])
-            
+            #temp_outputs = run_PSA_mp(samples[i, :], seeds[i, :])
+            temp_outputs = run_PSA_mp_dfs(samples[i, :], seeds[i, :], dists[i])
             all_outputs = all_outputs.append(temp_outputs, 
                                              ignore_index=True)
             

@@ -175,8 +175,6 @@ def check_beta_dist(params, val, sample_size, seed):
     above_vals = len(dist[dist > params.loc[val, 'up_bound']])
     
     if below_vals > 0 or above_vals > 0:
-        if val == 'risk oc tubal ligation':
-            print('check')
         np.random.seed(seed*3)
         #Replace out-of-bound values with new values
         #Draw a much bigger random sample to avoid duplicate values as much as possible
@@ -360,7 +358,9 @@ def plot_dist_charts_from_dict(var_dict):
         
 
 def generate_samples(sample_size):
-    param_dists = set_psa_params(10000)
+    print("generating samples")
+    param_dists = set_psa_params(sample_size)
+    print("compiling samples")
     samples_df = pd.DataFrame()
     for k in param_dists.keys():
         #The stage distributions are tempermental bc they're numpy arrays
@@ -375,6 +375,8 @@ def generate_samples(sample_size):
             samples_df = samples_df.drop(columns = ['x', 'y', 'z'])
         else:
             samples_df[k] = param_dists[k]
+    samples_df.to_csv(ps.data_repo/f"PSA_inputs_{sample_size}_samples{ps.icer_version}.csv", 
+                        index = False)
     return samples_df
 
 #plot_dist_charts_from_dict(test)
@@ -718,43 +720,43 @@ def apply_cost_table(orig_dmat, cost_df = 'none'):
     
 
 
-#this is a separate function bc it's only informative when testing all strategies (e.g., threshold, PSA)
-def test_surveillance_performance(sample_size):
-    start = time.time()
-    d_ec_spec = np.random.uniform(low = ps.PARAMS.loc['spec endo surv', 'low_bound'],
-                                  high = ps.PARAMS.loc['spec endo surv', 'up_bound'],
-                                  size = sample_size)
-    d_ec_sens = np.random.uniform(low = ps.PARAMS.loc['sens endo surv', 'low_bound'],
-                                  high = ps.PARAMS.loc['sens endo surv', 'up_bound'],
-                                  size = sample_size)
+# #this is a separate function bc it's only informative when testing all strategies (e.g., threshold, PSA)
+# def test_surveillance_performance(sample_size):
+#     start = time.time()
+#     d_ec_spec = np.random.uniform(low = ps.PARAMS.loc['spec endo surv', 'low_bound'],
+#                                   high = ps.PARAMS.loc['spec endo surv', 'up_bound'],
+#                                   size = sample_size)
+#     d_ec_sens = np.random.uniform(low = ps.PARAMS.loc['sens endo surv', 'low_bound'],
+#                                   high = ps.PARAMS.loc['sens endo surv', 'up_bound'],
+#                                   size = sample_size)
     
-    d_oc_spec = np.random.uniform(low = ps.PARAMS.loc['spec oc surv', 'low_bound'],
-                                  high = ps.PARAMS.loc['spec oc surv', 'up_bound'],
-                                  size = sample_size)
-    d_oc_sens = np.random.uniform(low = ps.PARAMS.loc['sens oc surv', 'low_bound'],
-                                  high = ps.PARAMS.loc['sens oc surv', 'up_bound'],
-                                  size = sample_size)
+#     d_oc_spec = np.random.uniform(low = ps.PARAMS.loc['spec oc surv', 'low_bound'],
+#                                   high = ps.PARAMS.loc['spec oc surv', 'up_bound'],
+#                                   size = sample_size)
+#     d_oc_sens = np.random.uniform(low = ps.PARAMS.loc['sens oc surv', 'low_bound'],
+#                                   high = ps.PARAMS.loc['sens oc surv', 'up_bound'],
+#                                   size = sample_size)
     
-    perf_char_dist = {'sens endo surv': np.sort(d_ec_sens),
-                       'spec endo surv': np.sort(d_ec_spec),
-                       'sens oc surv': np.sort(d_oc_sens),
-                       'spec oc surv': np.sort(d_oc_spec)}
+#     perf_char_dist = {'sens endo surv': np.sort(d_ec_sens),
+#                        'spec endo surv': np.sort(d_ec_spec),
+#                        'sens oc surv': np.sort(d_oc_sens),
+#                        'spec oc surv': np.sort(d_oc_spec)}
     
-    df_dict = {}
+#     df_dict = {}
     
-    for key in perf_char_dist.keys():
-        these_params = ps.PARAMS.copy()
-        i = 0
-        for i in range(0, sample_size):
-            print(i)
-            if i == sample_size:
-                print('error')
-            these_params.loc[key, 'value'] = perf_char_dist[key][i]
-            df_dict.update(sim.iterate_strategies_owsa(params = these_params, sens_type = 'survey'))
+#     for key in perf_char_dist.keys():
+#         these_params = ps.PARAMS.copy()
+#         i = 0
+#         for i in range(0, sample_size):
+#             print(i)
+#             if i == sample_size:
+#                 print('error')
+#             these_params.loc[key, 'value'] = perf_char_dist[key][i]
+#             df_dict.update(sim.iterate_strategies_owsa(params = these_params, sens_type = 'survey'))
             
-    end = time.time()
-    print('run time: ', end - start)
-    return df_dict
+#     end = time.time()
+#     print('run time: ', end - start)
+#     return df_dict
 
 
     
@@ -791,7 +793,32 @@ def iterate_risk_levels_mp(gene, cancer_type):
             
     return df_dict
 
-
+def iterate_strategies_PSA_mp_df(dist):
+    #print('running sample: ', seed)
+    
+    #set up the distribution of parameters to be tested for this seed
+    
+    #each element in range(0, sample_size) refers to a preset distribution sample to pull from
+    i = 0
+    for i in range(0, len(dist)):
+        this_dist = dist.iloc[i, :]
+        param_df = pd.DataFrame(this_dist)
+        #param_df = param_df.transpose()
+        param_df.columns = ['value']
+        #print(param_df)
+        if i == 0:
+            #container for distribution matrices
+            df_dict = sim.iterate_strategies(params = param_df, run_tracker = i,
+                                                  PSA = True)
+        else:
+            df_dict.update(sim.iterate_strategies(params = param_df,
+                                                       run_tracker = i,
+                                                       PSA = True))
+        
+    return df_dict
+# test_dist = generate_samples(32)
+# test_split = np.array_split(test_dist, 8)
+# test_out = iterate_strategies_PSA_mp_df(2, test_split[0])
 
 def iterate_strategies_PSA_mp(sample_size, seed):
     print('running sample: ', seed)
