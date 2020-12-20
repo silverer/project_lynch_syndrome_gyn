@@ -12,6 +12,7 @@ import scipy.stats as ss
 import lynch_gyn_simulator as sim
 import matplotlib.pyplot as plt
 import time
+import os
 
 RISK_RANGE = np.arange(-5, 6)
 SAMPLE_SIZE = 10
@@ -357,9 +358,9 @@ def plot_dist_charts_from_dict(var_dict):
             plt.show()
         
 
-def generate_samples(sample_size):
+def generate_samples(sample_size, seed):
     print("generating samples")
-    param_dists = set_psa_params(sample_size)
+    param_dists = set_psa_params(sample_size, seed)
     print("compiling samples")
     samples_df = pd.DataFrame()
     for k in param_dists.keys():
@@ -375,7 +376,11 @@ def generate_samples(sample_size):
             samples_df = samples_df.drop(columns = ['x', 'y', 'z'])
         else:
             samples_df[k] = param_dists[k]
-    samples_df.to_csv(ps.data_repo/f"PSA_inputs_{sample_size}_samples{ps.icer_version}.csv", 
+    fname = ps.data_repo/f"PSA_inputs{sample_size}_samples_{seed[0]}{ps.icer_version}.csv"
+    if os.path.exists(fname):
+        fname = ps.data_repo/f"PSA_inputs{sample_size}_samples_{seed[0]}{ps.icer_version}_1.csv"
+    
+    samples_df.to_csv(fname, 
                         index = False)
     return samples_df
 
@@ -500,8 +505,15 @@ def generate_base_util_dists(sample_size, seed = time.time()):
             new_utils = np.full(sample_size, this_old_util)
         new_utils = list(new_utils)
         dists[col] = new_utils
+    fname = f"utility_dists_psa_{sample_size}_samples{ps.icer_version}.csv"
+    if os.path.exists(ps.dump_psa/fname):
+        rand_int = np.random.choice(200, size = 1)
+        fname = f"utility_dists_psa_{sample_size}_samples{ps.icer_version}_{rand_int[0]}.csv"
+    dists.to_csv(ps.data_repo/fname, index = False)
     return dists
 
+#test_out = generate_base_util_dists(10, 123)
+#print(len(test_out))
 
 def set_new_utilities(**kwargs):
     
@@ -531,6 +543,18 @@ def set_new_utilities(**kwargs):
         
         new_util_matrix = create_new_util_matrix(new_utils)
         return new_util_matrix, new_u
+    
+    elif 'new_utilities' in kwargs:
+        util_dict_matrix = {}
+        util_dist = kwargs.get('new_utilities')
+        util_dist = util_dist.reset_index(drop = True)
+        for i in range(0, len(util_dist)):
+            this_dist = util_dist.loc[i:i, :]
+            new_utils = ps.raw_utils.copy()
+            new_utils.loc[35, :] = this_dist.loc[i, :]
+            util_dict_matrix[i] = create_new_util_matrix(new_utils)
+            
+        return util_dict_matrix
     
     elif 'sample_size' in kwargs:
         seed = kwargs.get('seed')
@@ -575,29 +599,52 @@ def set_new_utilities(**kwargs):
             util_dict_matrix[vals_to_test[k]] = create_new_util_matrix(new_utils)
             
         return util_dict_matrix
-            
-    
     else:
         new_util_matrix = create_new_util_matrix(old_utils)
         return new_util_matrix
-
+#test_1 = set_new_utilities(new_utilities = test_out)
 #test = set_new_utilities(thresh_params =  ['HSBO'])
 #Checks to make sure there aren't out of bound values in the gamma distribution
 #Also sets the gamma dists for the PSA
-def check_gamma_dist(params, val, sample_size = 10000, seed = 123):
+def check_gamma_dist(params, val, sample_size = 10000, seed = time.time()):
     np.random.seed(seed)
     dist = np.random.gamma(params.loc[val, 'gamma_shape'], 
                           params.loc[val, 'gamma_scale'], sample_size)
     below_vals = len(dist[dist < params.loc[val, 'low_bound']])
     above_vals = len(dist[dist > params.loc[val, 'up_bound']])
+    if below_vals > sample_size/4 or above_vals > sample_size/4:
+        dist = np.random.gamma(params.loc[val, 'gamma_shape'], 
+                                params.loc[val, 'gamma_scale'], sample_size*20)
     
     dist[dist > params.loc[val, 'up_bound']] = params.loc[val, 'cost']
     dist[dist < params.loc[val, 'low_bound']] = params.loc[val, 'cost']
-    return below_vals, above_vals, dist
-
+    return dist
 
 #change_df 
+def generate_cost_PSA_inputs(sample_size, seed = time.time()):
+    temp_costs = ps.raw_costs.copy()
+    params = temp_costs['param'].to_list()
+    temp_costs = temp_costs.set_index(['param'])
+    #for tracking distributions
+    dist_df = pd.DataFrame(columns = params, 
+                            index = np.arange(0, sample_size, 
+                            dtype = int))
+    # dist_df = pd.DataFrame(columns = np.arange(0, sample_size, dtype = int),
+    #                         index = temp_costs.index.to_list())
+    for p in params:
+        dist = check_gamma_dist(temp_costs, p, 
+                                sample_size = sample_size,
+                                seed = seed)
+        dist_df[p] = dist
+    fname = f"cost_dists_psa_{sample_size}_samples{ps.icer_version}.csv"
+    if os.path.exists(ps.dump_psa/fname):
+        rand_int = np.random.choice(200, size = 1)
+        fname = f"cost_dists_psa_{sample_size}_samples{ps.icer_version}_{rand_int[0]}.csv"
+    dist_df.to_csv(ps.data_repo/fname)
+    return dist_df
 
+#test_out = generate_cost_PSA_inputs(10, 123)
+#print(test_out)
 def set_new_costs(**kwargs):
     #choose_end implies OWSA
     if 'choose_end' in kwargs:
@@ -611,7 +658,20 @@ def set_new_costs(**kwargs):
         #cost_df.columns = ['param', 'cost']
         
         return cost_df
-    
+    #sets costs for PSA
+    elif 'new_costs' in kwargs:
+        dist_df = kwargs.get("new_costs")
+        tracker = 0
+        cost_dict_matrix = {}
+        for i in dist_df.index:
+            temp_cost_empty = ps.raw_costs.copy()
+            temp_cost_empty = temp_cost_empty.set_index(['param'])
+
+            temp_cost_empty['cost'] = dist_df.loc[i, :]
+            cost_dict_matrix[tracker] = temp_cost_empty
+            tracker += 1
+        
+        return cost_dict_matrix
     #sets costs for PSA
     elif 'seed' in kwargs:
         sample_size = kwargs.get('sample_size')
@@ -623,9 +683,9 @@ def set_new_costs(**kwargs):
         dist_df = pd.DataFrame(columns = np.arange(0, sample_size, dtype = int),
                                index = temp_costs.index.to_list())
         for p in params:
-            below, above, dist = check_gamma_dist(temp_costs, p, 
-                                                  sample_size = sample_size,
-                                                  seed = seed)
+            dist = check_gamma_dist(temp_costs, p, 
+                                    sample_size = sample_size,
+                                    seed = seed)
             dist_df.loc[p, :] = dist
         
         cost_dict_matrix = {}
@@ -658,8 +718,8 @@ def set_new_costs(**kwargs):
                 final_costs = temp_costs_empty[['param', 'cost']]
                 cost_dict_matrix[r] = final_costs
         return cost_dict_matrix
-#test = set_new_costs(thresh_params = ['HSBO'])
-
+# test = set_new_costs(new_costs = test_out)
+# print(test)
 #Sets up the table that will be multiplied with the dist matrix from simulation
 #Optional cost df parameter specifies the costs to be used for calculations
 def generate_cost_table(orig_dmat, cost_df = 'none'):
@@ -806,38 +866,6 @@ def iterate_strategies_PSA_mp_df(dist):
         #param_df = param_df.transpose()
         param_df.columns = ['value']
         #print(param_df)
-        if i == 0:
-            #container for distribution matrices
-            df_dict = sim.iterate_strategies(params = param_df, run_tracker = i,
-                                                  PSA = True)
-        else:
-            df_dict.update(sim.iterate_strategies(params = param_df,
-                                                       run_tracker = i,
-                                                       PSA = True))
-        
-    return df_dict
-# test_dist = generate_samples(32)
-# test_split = np.array_split(test_dist, 8)
-# test_out = iterate_strategies_PSA_mp_df(2, test_split[0])
-
-def iterate_strategies_PSA_mp(sample_size, seed):
-    print('running sample: ', seed)
-    
-    #set up the distribution of parameters to be tested for this seed
-    param_dict = set_psa_params(sample_size, seed = seed)
-    all_params = list(param_dict.keys())
-    #each element in range(0, sample_size) refers to a preset distribution sample to pull from
-    i = 0
-    for i in range(0, sample_size):
-        
-        these_params = {}
-        #insert the params for this i value into the temporary param dictionary
-        for k in all_params:
-            these_vals = param_dict[k]
-            these_params[k] = these_vals[i]
-        #transform the dictionary to a data frame to pass to simulate script
-        param_df = pd.DataFrame.from_dict(these_params, orient = 'index')
-        param_df = param_df.rename(columns = {0:'value'})
         if i == 0:
             #container for distribution matrices
             df_dict = sim.iterate_strategies(params = param_df, run_tracker = i,

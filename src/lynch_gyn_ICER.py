@@ -15,6 +15,7 @@ import multiprocessing as mp
 import datetime
 import post_processing as pp
 import time
+import os
 
 
 #multiplies the utility matrix generated in create_full_util_multiplier by the D_matrix
@@ -319,6 +320,77 @@ def get_agg_utils_PSA(df_dict_list, seed):
             
             these_costs = sen.generate_cost_table(d_temp, cost_inputs)
             cost_results = get_costs(d_temp, cost_matrix = these_costs)
+            for col in outputs:
+                if col in these_utils.columns:
+                    outputs.loc[index_tracker, 
+                                col] = these_utils.loc[len(these_utils) - 1, col]
+                    
+                elif col in d_temp.columns:
+                    outputs.loc[index_tracker, 
+                                col] = d_temp.loc[len(d_temp) - 1, col]
+                
+                elif 'cost' in col:
+                    if 'total' in col:
+                        outputs.loc[index_tracker, 
+                                    col] = cost_results.loc[len(cost_results) - 1, col]
+                    else:
+                        outputs.loc[index_tracker, 
+                                    col] = temp_costs.loc['cost', col]
+            index_tracker +=1
+            
+        if index_tracker % 1000 == 0:
+            this_end = time.time()
+            print('time to run ', index_tracker, ' samples: ', (this_end - start)/60)
+                
+    return outputs
+
+def get_agg_utils_PSA_predist(df_dict_list, new_utilities, new_costs):
+    
+    df_cols = ps.RAW_OUTCOME_COLS
+    cost_cols = ps.raw_costs['param'].to_list()
+    cost_cols = ['cost ' + c for c in cost_cols]
+    u_cols = ['U ' + u for u in ps.UTIL_VARS]
+    
+    df_cols.extend(u_cols)
+    df_cols.extend(cost_cols)
+    df_cols.append('key')
+    outputs = pd.DataFrame(columns = df_cols)
+    for param in ps.PARAMS.index:
+        outputs[param] = 'none'
+    start = time.time()
+    df_dict = df_dict_list[0]
+    df_key_list = list(df_dict.keys())
+    index_tracker = 0
+    
+    new_df_key_list = list(chunks(df_key_list, 4*(len(ps.ALL_STRATEGIES))))
+
+    util_dicts = sen.set_new_utilities(new_utilities = new_utilities)
+    cost_dicts = sen.set_new_costs(new_costs = new_costs)
+    #Should equal the number of trials in each sample
+    #E.g., if running 2 samples on 8 cores (total n = 16), dictionary lengths should be 2
+    #print('util dict length: ', len(util_dicts))
+    #print('cost dict length: ', len(cost_dicts))
+    
+    i = 0
+    for i in range(0, len(new_df_key_list)):
+        #print(i)
+        #Sets new utilities and costs to apply to each set of the 48 runs (4 genes X 12 strategies) in a trial
+        new_qaly_df = util_dicts[i]
+        cost_inputs = cost_dicts[i]
+        #Create df for storing cost info with main result df
+        temp_costs = cost_inputs.transpose()
+        for c in temp_costs.columns:
+            temp_costs.rename(columns = {c: 'cost '+c}, inplace=True)
+        #Apply costs and utilities to the probability results in each trial
+        k = 0
+        for k in range(0, len(new_df_key_list[0])):
+            d_temp = df_dict[new_df_key_list[i][k]]
+            
+            these_utils = apply_util_matrix(d_temp, new_qaly_df)
+            #Generates costs based on model run characteristics
+            these_costs = sen.generate_cost_table(d_temp, cost_inputs)
+            cost_results = get_costs(d_temp, cost_matrix = these_costs)
+            #Store results in aggregate dataframe
             for col in outputs:
                 if col in these_utils.columns:
                     outputs.loc[index_tracker, 
@@ -687,58 +759,18 @@ def get_util_thresholds_mp(utils_to_change = ps.UTIL_VARS, sample_size = 100):
     return optimal_df
 
 
-def run_PSA_mp(samples, seeds):
-    start = time.time()
-    dt = datetime.datetime.now()
-    print(dt.strftime("%Y-%m-%d %H:%M"), '    running PSA')
-    
-    pairs = np.empty([len(samples), 2], dtype=int)
-    i = 0
-    for i in range(0, len(samples)):
-        pairs[i][0] = samples[i]
-        pairs[i][1] = seeds[i]
-    #context manager opens and closes pool as jobs are completed
-    with mp.Pool(len(samples)) as pool:
-        
-        #run the PSA
-        df_pooled = pool.starmap(sen.iterate_strategies_PSA_mp, pairs)
-        #make sure the df inputs are lists to pass with the random seeds
-        dfs = []
-        for i in range(0, len(df_pooled)):
-            dfs.append([df_pooled[i]])
-            
-        utils = pool.starmap(get_agg_utils_PSA, zip(dfs, seeds))   
-        
-    end_1 = time.time()
-    dt = datetime.datetime.now()
-    print(dt.strftime("%Y-%m-%d %H:%M"), 
-          '    time to run samples and get utils: ', (end_1-start)/60)
-       
-    i = 0
-    for i in range(0, len(utils)):
-        if i == 0:
-            all_utils = utils[i].copy()
-        else:
-            all_utils = all_utils.append(utils[i].copy(), ignore_index = True)
-    one_seed = seeds[0]
-    total_samples = sum(samples)
-    
-    all_fname = f'full_util_outputs_psa_{total_samples}_samples_{one_seed}.csv'
-    print(all_fname)
-    #save the results for every strategy and gene for the trials in the pool
-    all_utils.to_csv(ps.dump_psa/all_fname,
-                     index=False)
-    
-    return all_utils
-
-def run_PSA_mp_dfs(samples, seeds, dists):
+def run_PSA_mp_dfs(samples, seeds, dists, utility_dist, cost_dist):
     start = time.time()
     dt = datetime.datetime.now()
     print(dt.strftime("%Y-%m-%d %H:%M"), '    running PSA')
     #Split the probabilities into n = len(seeds) number of subsamples
     #this will create n = len(seeds) chunks to feed into the simulator
     dist_list = np.array_split(dists, len(seeds))
-    
+    util_dist_list = np.array_split(utility_dist, len(seeds))
+    cost_dist_list = np.array_split(cost_dist, len(seeds))
+    #print("Length of cost dists: ", len(cost_dist_list), type(cost_dist_list))
+    #print("Length of prob dists: ", len(dist_list), type(dist_list))
+    #print("Length of util dists: ", len(util_dist_list), type(util_dist_list))
     #Runs, for example, samples of size 2 on 8 different cores simultaneously
     #context manager opens and closes pool as jobs are completed
     with mp.Pool(len(seeds)) as pool:
@@ -748,8 +780,8 @@ def run_PSA_mp_dfs(samples, seeds, dists):
         dfs = []
         for i in range(0, len(df_pooled)):
             dfs.append([df_pooled[i]])
-        utils = pool.starmap(get_agg_utils_PSA, zip(dfs, seeds))   
-        
+        #utils = pool.starmap(get_agg_utils_PSA, zip(dfs, seeds))   
+        utils = pool.starmap(get_agg_utils_PSA_predist, zip(dfs, util_dist_list, cost_dist_list))
     end_1 = time.time()
     dt = datetime.datetime.now()
     print(dt.strftime("%Y-%m-%d %H:%M"), 
@@ -766,6 +798,8 @@ def run_PSA_mp_dfs(samples, seeds, dists):
     
     all_fname = f'full_util_outputs_psa_{total_samples}_samples_{one_seed}{ps.icer_version}.csv'
     print(all_fname)
+    if os.path.exists(ps.dump_psa/all_fname):
+        all_fname = f'full_util_outputs_psa_{total_samples}_samples_{one_seed}{ps.icer_version}_1.csv'
     #save the results for every strategy and gene for the trials in the pool
     all_utils.to_csv(ps.dump_psa/all_fname,
                      index=False)
@@ -893,7 +927,7 @@ def main():
         #in each loop, n = sample_size samples will be run, but they'll be distributed
         #across n = core_num number of cores
         sample_size = 16
-        loops = 120
+        loops = 2
         #loops = 105
         #loops = 128
         if mp.cpu_count() >= 32:
@@ -910,18 +944,24 @@ def main():
         seeds = np.random.choice(2000000, size = np.shape(samples), 
                                  replace = False)
         #Generate inputs for probabilities
-        all_dists = sen.generate_samples(sample_size * loops)
+        all_dists = sen.generate_samples(sample_size * loops, seeds[0])
         dists = np.array_split(all_dists, loops)
-        #dists = np.array_split(all_dists, each_sample)
-        print(len(dists))
-        
+        util_dists = sen.generate_base_util_dists(sample_size * loops, seeds[0])
+        util_dists = np.array_split(util_dists, loops)
+        cost_dists = sen.generate_cost_PSA_inputs(sample_size * loops, seeds[0])
+        cost_dists = np.array_split(cost_dists, loops)
+        #These should all be the same length
+        #print("length of dists: ", len(dists))
+        #print("length of utils: ", len(util_dists))
+        #print("length of costs: ", len(cost_dists))
         all_outputs = pd.DataFrame()
         start = time.time()
         i = 0
         for i in range(0, loops):
-            print(i)
+            print('loop = ', i)
             #temp_outputs = run_PSA_mp(samples[i, :], seeds[i, :])
-            temp_outputs = run_PSA_mp_dfs(samples[i, :], seeds[i, :], dists[i])
+            temp_outputs = run_PSA_mp_dfs(samples[i, :], seeds[i, :], dists[i],
+                                            util_dists[i], cost_dists[i])
             all_outputs = all_outputs.append(temp_outputs, 
                                              ignore_index=True)
             
