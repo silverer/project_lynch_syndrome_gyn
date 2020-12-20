@@ -376,9 +376,9 @@ def generate_samples(sample_size, seed):
             samples_df = samples_df.drop(columns = ['x', 'y', 'z'])
         else:
             samples_df[k] = param_dists[k]
-    fname = ps.data_repo/f"PSA_inputs{sample_size}_samples_{seed[0]}{ps.icer_version}.csv"
+    fname = ps.dump_psa/f"PSA_inputs_{sample_size}_samples_{seed[0]}{ps.icer_version}.csv"
     if os.path.exists(fname):
-        fname = ps.data_repo/f"PSA_inputs{sample_size}_samples_{seed[0]}{ps.icer_version}_1.csv"
+        fname = ps.dump_psa/f"PSA_inputs_{sample_size}_samples_{seed[0]}{ps.icer_version}_1.csv"
     
     samples_df.to_csv(fname, 
                         index = False)
@@ -509,7 +509,7 @@ def generate_base_util_dists(sample_size, seed = time.time()):
     if os.path.exists(ps.dump_psa/fname):
         rand_int = np.random.choice(200, size = 1)
         fname = f"utility_dists_psa_{sample_size}_samples{ps.icer_version}_{rand_int[0]}.csv"
-    dists.to_csv(ps.data_repo/fname, index = False)
+    dists.to_csv(ps.dump_psa/fname, index = False)
     return dists
 
 #test_out = generate_base_util_dists(10, 123)
@@ -640,7 +640,7 @@ def generate_cost_PSA_inputs(sample_size, seed = time.time()):
     if os.path.exists(ps.dump_psa/fname):
         rand_int = np.random.choice(200, size = 1)
         fname = f"cost_dists_psa_{sample_size}_samples{ps.icer_version}_{rand_int[0]}.csv"
-    dist_df.to_csv(ps.data_repo/fname)
+    dist_df.to_csv(ps.dump_psa/fname)
     return dist_df
 
 #test_out = generate_cost_PSA_inputs(10, 123)

@@ -9,3 +9,5 @@ psa_outs/*.png
 model_outs/*.csv
 model_outs/*.png
 .vscode/*
+psa_outs_*/*.csv
+psa_outs_*/*.png
