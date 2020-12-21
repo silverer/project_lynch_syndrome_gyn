@@ -27,8 +27,8 @@ dump = data_io.OUTPUT
 dump_psa = data_io.OUTPUT_PSA
 dump_figs = data_io.OD_FIGS
 #also define the version name to append to output files
-sim_version = '_12_20_20'
-icer_version = '_12_20_20'
+sim_version = '_12_16_20'
+icer_version = '_12_16_20'
 
 #Filenames set naming conventions for all outputs
 FILE_NAMES = pd.read_csv(data_io.F_NAMES)

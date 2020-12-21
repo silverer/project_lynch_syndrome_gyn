@@ -388,7 +388,7 @@ def plot_psa_results_circle_icer(df_og, show = True):
         temp = temp.sort_values(['new_id', ps.ICER_COL])
         
         temp['icer_less_than_wtp'] = temp[ps.ICER_COL] < 100000
-        test_fname = f"{ps.GENES[i]}_test_all_icers.csv"
+        test_fname = f"{ps.GENES[i]}_all_PSA_icers{ps.icer_version}.csv"
         temp.to_csv(ps.dump_psa/test_fname, index = False)
         
         temp = temp[temp['icers'] < 100000]

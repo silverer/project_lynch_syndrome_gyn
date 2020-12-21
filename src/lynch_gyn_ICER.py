@@ -799,7 +799,8 @@ def run_PSA_mp_dfs(samples, seeds, dists, utility_dist, cost_dist):
     all_fname = f'full_util_outputs_psa_{total_samples}_samples_{one_seed}{ps.icer_version}.csv'
     print(all_fname)
     if os.path.exists(ps.dump_psa/all_fname):
-        all_fname = f'full_util_outputs_psa_{total_samples}_samples_{one_seed}{ps.icer_version}_1.csv'
+        rand_int = np.random.choice(100000, 1)
+        all_fname = f'full_util_outputs_psa_{total_samples}_samples_{one_seed}{ps.icer_version}_{rand_int[0]}.csv'
     #save the results for every strategy and gene for the trials in the pool
     all_utils.to_csv(ps.dump_psa/all_fname,
                      index=False)
@@ -921,15 +922,12 @@ def main():
         
     elif run_type == 'PSA':
         #having a sample size divisible by 8 is preferable for core distribution
-        #80 * 125 = 10000 samples
         #add an extra few loops in case there are duplicate seeds
         #sample_size should be divisible by the number of CPU's
         #in each loop, n = sample_size samples will be run, but they'll be distributed
         #across n = core_num number of cores
-        sample_size = 16
-        loops = 2
-        #loops = 105
-        #loops = 128
+        sample_size = 96
+        loops = 106
         if mp.cpu_count() >= 32:
             core_num = 32
             print('running on 32 cores')
