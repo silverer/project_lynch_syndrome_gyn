@@ -867,10 +867,10 @@ def main():
     PSA: Probabilistic sensitivity analysis. This should be run from the
             command line.
     '''
-    run_type = 'PSA'
-    thresh_type = 'risk'
+    run_type = 'thresh'
+    thresh_type = 'U init HSBO'
     run = True
-    plot = False
+    plot = True
     
     if run_type == 'base case':
         #save dfs indicates whether the distribution matrices for 4 genes X 12 strategies should be saved
@@ -903,7 +903,8 @@ def main():
                                                      save_outs = False)
                 
             if plot:
-                risk_threshs = pd.read_csv(ps.dump/f'threshold_lifetime risk{ps.icer_version}.csv')
+                if run == False:
+                    risk_threshs = pd.read_csv(ps.dump/f'threshold_icers_lifetime risk_all_genes{ps.icer_version}.csv')
                 pp.plot_risk_thresholds(risk_threshs)
                 pp.plot_risk_thresholds_cancer_incidence(risk_threshs)
         elif 'cost' in thresh_type or 'U' in thresh_type:

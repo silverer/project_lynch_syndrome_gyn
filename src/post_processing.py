@@ -908,11 +908,11 @@ def plot_one_way_optim(df_og):
     ax_array = [ax1, ax2, ax3, ax4]
     all_strats = []
     all_markers = []
-    if changed_param == 'U Hysterectomy':
-        temp_changed_param = 'U Hysterectomy (or Post-op No Menopause)'
-    else:
-        temp_changed_param = changed_param
-    
+    # if changed_param == 'U Hysterectomy':
+    #     temp_changed_param = 'U Hysterectomy (Post-op w/o Menopause)'
+    # else:
+    #     temp_changed_param = changed_param
+    temp_changed_param = changed_param
     for i in range(0, len(ps.GENES)):
         temp = df[df['gene'] == ps.GENES[i]]
         #get param vals to set x axis labels
@@ -1138,13 +1138,13 @@ def plot_risk_thresholds_cancer_incidence(df):
         colors = df_gene['color'].drop_duplicates().to_list()
         for i in range(0, len(risk_types)):
             temp = df_gene[df_gene['changed param']==risk_types[i]]
-            temp.sort_values(by = [vals[i]], inplace=True)
+            temp = temp.sort_values(by = [vals[i]])
             temp['percent_risk'] = temp[vals[i]].apply(format_percent)
             ax_array[i].bar(temp['percent_risk'].astype(str), temp['Cancer Incidence'],
                             color = temp['color'])
             bottom = abs_min
             top = abs_max
-            ax_array[i].set_xticklabels(labels =temp['percent_risk'].astype(str),
+            ax_array[i].set_xticklabels(labels =temp['percent_risk'].astype(str).drop_duplicates(),
                                         rotation = 90)
             rcParams.update({'font.size': 12})
             ax_array[i].set_ylim(top=top, bottom = bottom)
