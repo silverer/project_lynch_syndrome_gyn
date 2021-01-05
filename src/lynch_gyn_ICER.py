@@ -868,7 +868,7 @@ def main():
             command line.
     '''
     run_type = 'thresh'
-    thresh_type = 'U init HSBO'
+    thresh_type = 'risk ac death oc surg'
     run = True
     plot = True
     

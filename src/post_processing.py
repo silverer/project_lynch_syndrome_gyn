@@ -1405,12 +1405,9 @@ def plot_basecase(output_df_og, together = False, column = ps.QALY_COL,
             plt.savefig(ps.dump_figs/fname, bbox_inches = 'tight', dpi = 300)
         plt.show()
         
-# =============================================================================
-# df = pd.read_csv(ps.dump/f"{ps.F_NAME_DICT['BC_QALYs']}{ps.icer_version}.csv")
-# plot_basecase(df, together = True, bw=True)
-# =============================================================================
 
-
+df = pd.read_csv(ps.dump/f"icers_w_dominated_all_genes{ps.icer_version}.csv")
+plot_basecase(df, together = True, bw=True)
 import regex as re
 def build_outputs_ax(df_dict, ax, gene, col):
     temp = df_dict.copy()
@@ -1644,7 +1641,7 @@ def create_bc_output_table(orig_bc_outs = 'none', keep_strats = 'all'):
     
     if type(orig_bc_outs) == str:
         try:
-            bc_outs = pd.read_csv(ps.dump/f'base_case_all_outputs{ps.icer_version}.csv')
+            bc_outs = pd.read_csv(ps.dump/f'base_case_all_outputs_qalys{ps.icer_version}.csv')
         except:
             'base case QALY outputs not found!'
             return 'error'
