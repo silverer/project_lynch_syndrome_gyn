@@ -35,6 +35,13 @@ rcParams['font.sans-serif'] = "Arial"
 
 
 
+'''
+#########################################################
+
+Functions to process PSA results
+
+#########################################################
+'''
 import os
 def load_psa_files(filestem):
     df_array = []
@@ -50,13 +57,6 @@ def load_psa_files(filestem):
     return df
 
 
-'''
-#########################################################
-
-Functions to process PSA results
-
-#########################################################
-'''
 '''
 Creates a new ID unique to each PSA trial
 '''
@@ -186,7 +186,6 @@ def get_psa_results(full_outputs, **kwargs):
     print('time to get: ', end-t0)
     return optimal_df
 
-
 def generate_bc_psa_outputs(df):
     df_new = df.copy()
     optimal_strats = sim.load_bc(return_strategies=True)
@@ -229,9 +228,44 @@ def generate_bc_psa_outputs(df):
                                                                      (x > 100000).sum()).to_dict()
     summary_df['trials_not_on_EF'] = summary_df['gene'].map(num_above_wtp)
     return summary_df
+#psa_results = pd.read_csv(ps.dump_psa/"icers_all_genes_psa_10000_samples_12_16_20.csv")
 
+def format_mean_sd(mean, sd, money = False):
+    if money:
+        mean = '${:,.2f}'.format(mean)
+        sd = '${:,.2f}'.format(sd)
+        return f"{mean} ({sd})"
+    return f"{round(mean, 2)} ({round(sd, 2)})"
 
-    
+#bc_results = generate_bc_psa_outputs(psa_results)
+#print(bc_results['gene'].value_counts())
+def format_bc_psa_outputs(bc_df):
+    new_cols = ['Average QALYs (SD)', 'Average Life-Years (SD)', 
+                'Average Total Cost (SD)', 'Average ICER (SD)',
+                '% of Trials on Efficiency Frontier']
+    formatted_df = pd.DataFrame()
+    formatted_df['Gene'] = bc_df['gene']
+    formatted_df['Strategy'] = bc_df['strategy']
+    formatted_df['Average QALYs (SD)'] = bc_df.apply(lambda x: format_mean_sd(x['total QALYs disc_mean'],
+                                                        x['total QALYs disc_std']), axis = 1)
+    formatted_df['Average Life-Years (SD)'] = bc_df.apply(lambda x: format_mean_sd(x['total LE_mean'],
+                                                        x['total LE_std']), axis = 1)
+    formatted_df['Average Total Cost (SD)'] = bc_df.apply(lambda x: format_mean_sd(x['total disc cost_mean'],
+                                                        x['total disc cost_std'], money = True), axis = 1)
+    formatted_df['Average ICER (SD)'] = bc_df.apply(lambda x: format_mean_sd(x['icers_mean'],
+                                                        x['icers_std'], money = True), axis = 1)
+    formatted_df['% of Trials on Efficiency Frontier'] = ((bc_df['sample_size']-bc_df['trials_not_on_EF'])/
+                                                            bc_df['sample_size'])
+    formatted_df['% of Trials on Efficiency Frontier'] = formatted_df['% of Trials on Efficiency Frontier'].apply(
+                                                                lambda x: f"{round(x*100, 2)}%")
+
+    return formatted_df
+
+# bc_results = pd.read_csv(ps.dump_psa/f"psa_bc_variability{ps.icer_version}.csv")
+# formatted_bc = format_bc_psa_outputs(bc_results)
+# print(formatted_bc)
+# formatted_bc.to_csv(ps.dump_psa/f"psa_bc_variability_formatted{ps.icer_version}.csv", index=False)
+#bc_results.to_csv(ps.dump_psa/f"psa_bc_variability{ps.icer_version}.csv", index=False)
 import matplotlib.ticker as mtick
 
 def generate_wtp_threshs(df):
@@ -257,8 +291,8 @@ def generate_wtp_threshs(df):
     #all_optimal.to_csv(ps.dump_psa/f'cost_effectiveness_acceptab{ps.icer_version}.csv')
     return all_optimal
 
-#ceac = generate_wtp_threshs(df)
-       
+#ceac = generate_wtp_threshs(psa_results)
+
 def create_ceac_ax(gene_df, ax):
     new_df = pd.DataFrame()
     gene = gene_df['gene'].drop_duplicates().to_list()[0]
@@ -292,16 +326,12 @@ def create_ceac_ax(gene_df, ax):
     ax.set_xlim(left = 0, right = 200001)
     ax.yaxis.set_major_formatter(mtick.PercentFormatter()) 
     ax.set_ylabel('% Iterations Cost-Effective')
-    ax.set_xlabel('Willingness-to-Pay Threshold (2019 USD)')
+    ax.set_xlabel('WTP (2019 USD)')
     labs = [str(i) for i in wtp_vals]
     #print(labs)
     ax.set_title(f"$\it{gene}$")
     ax.set_xticklabels(labels = labs, rotation = 45)
     return ax
-
-
-#ceac_df = pd.read_csv(ps.dump_psa/'cost_effectiveness_acceptab_02_27_20.csv')
-#graph_wtp_threshs_together(ceac_df, show = True)
         
 def graph_wtp_threshs(ceac_df_og, together = True, show = True):
     ceac_df = ceac_df_og.copy()
@@ -364,7 +394,8 @@ def graph_wtp_threshs(ceac_df_og, together = True, show = True):
         else:
             plt.clf()
 
-
+#ceac_df = pd.read_csv(ps.dump_psa/'psa_ce_acceptability_10000_samples_12_16_20.csv')
+#graph_wtp_threshs(ceac_df, together = True, show = True)
 
 
 def plot_psa_results_circle_icer(df_og, show = True):

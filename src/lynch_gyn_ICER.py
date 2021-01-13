@@ -867,9 +867,9 @@ def main():
     PSA: Probabilistic sensitivity analysis. This should be run from the
             command line.
     '''
-    run_type = 'thresh'
+    run_type = 'PSA'
     thresh_type = 'risk ac death oc surg'
-    run = True
+    run = False
     plot = True
     
     if run_type == 'base case':
