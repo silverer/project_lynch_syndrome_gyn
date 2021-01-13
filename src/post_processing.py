@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import datetime
 from matplotlib.patches import Patch
 import matplotlib.patches as mpatches
-
+import regex as re
 import lynch_gyn_simulator as sim
 import matplotlib.lines as mlines
 from matplotlib import rcParams
@@ -1406,9 +1406,9 @@ def plot_basecase(output_df_og, together = False, column = ps.QALY_COL,
         plt.show()
         
 
-df = pd.read_csv(ps.dump/f"icers_w_dominated_all_genes{ps.icer_version}.csv")
-plot_basecase(df, together = True, bw=True)
-import regex as re
+#df = pd.read_csv(ps.dump/f"icers_w_dominated_all_genes{ps.icer_version}.csv")
+#plot_basecase(df, together = True, bw=True)
+
 def build_outputs_ax(df_dict, ax, gene, col):
     temp = df_dict.copy()
     x_vals = ps.age_time
