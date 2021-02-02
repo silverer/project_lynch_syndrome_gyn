@@ -1,6 +1,6 @@
-# Markov Simulation Model: Cost-effectiveness of risk management strategies for Lynch Syndrome (LS)-associated GYN cancer
+# Markov Simulation Model: Cost-Effectiveness Analysis of Personalized Screening and Preventive Strategies for Gynecologic Cancers in Women with Lynch Syndrome
 
-### Jason D. Wright, Elisabeth R. Silver, Chin Hur, & Fay Kastrinos (2020)
+### Jason D. Wright, Elisabeth R. Silver, Sarah Xinhui Tan, Chin Hur, & Fay Kastrinos (2021)
 
 ## File Structure
 
