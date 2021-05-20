@@ -249,29 +249,29 @@ def set_psa_params(sample_size, seed = 123):
                 remainder = 1 - this_stage_arr[0]
                 if 'ec' in val:
                     if 'intervention' in val:
-                        #randomly choose the distribution that should -> regional
+                        #randomly choose the percent of the remainder that should -> regional (vs. distant)
                         possible_dists = [0.9, 0.95, 0.98]
                         temp_multiplier = np.random.choice(possible_dists)
                         this_stage_arr[1] = remainder * temp_multiplier
                         #distant is the remainder of the remainder
                         this_stage_arr[2] = 1 - sum(this_stage_arr[0:2])
                     else:
-                        #randomly choose the distribution that should -> regional
+                        #randomly choose the percent of the remainder that should -> regional (vs. distant)
                         possible_dists = [0.75, 0.8, 0.85, 0.88]
                         temp_multiplier = np.random.choice(possible_dists)
                         this_stage_arr[1] = remainder * temp_multiplier
                         #distant is the remainder of the remainder
                         this_stage_arr[2] = 1 - sum(this_stage_arr[0:2])
                 else:
-                    if 'intervention' in val:
-                        #randomly choose the distribution that should -> regional
+                    if 'intervention' in val or "screening" in val:
+                        #randomly choose the percent of the remainder that should -> regional (vs. distant)
                         possible_dists = [0.5, 0.55, 0.6, 0.65]
                         temp_multiplier = np.random.choice(possible_dists)
                         this_stage_arr[1] = remainder * temp_multiplier
                         #distant is the remainder of the remainder
                         this_stage_arr[2] = 1 - sum(this_stage_arr[0:2])
                     else:
-                        #randomly choose the distribution that should -> regional
+                        #randomly choose the percent of the remainder that should -> regional (vs. distant)
                         possible_dists = [0.3, 0.35, 0.4, 0.45]
                         temp_multiplier = np.random.choice(possible_dists)
                         this_stage_arr[1] = remainder * temp_multiplier
@@ -718,8 +718,8 @@ def set_new_costs(**kwargs):
                 final_costs = temp_costs_empty[['param', 'cost']]
                 cost_dict_matrix[r] = final_costs
         return cost_dict_matrix
-# test = set_new_costs(new_costs = test_out)
-# print(test)
+#test = set_new_costs(new_costs = test_out)
+#print(test)
 #Sets up the table that will be multiplied with the dist matrix from simulation
 #Optional cost df parameter specifies the costs to be used for calculations
 def generate_cost_table(orig_dmat, cost_df = 'none'):

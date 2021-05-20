@@ -130,13 +130,13 @@ def build_event_df(run_spec, params):
     event_df['oc stage dist type'] = 'oc stage dist nat hist'
     event_df['ec stage dist type'] = 'ec stage dist nat hist'
     
-    #Regardless of intervention, EC will have a downstaging benefit 
+    #Regardless of intervention, EC will have the same downstaging benefit 
     event_df.loc[event_df['age'] >= run_spec.min_intervention_age - 1,
                  'ec stage dist type'] = 'ec stage dist intervention'
     
     #if there's a set age for removing the ovaries, then apply the oc stage dist
     #for intervention to that age and older
-    #doesn't apply to surveillance since no OC downstaging
+    #there's a modest downstaging effect on OC for surveillance (but it's less than HSBO/ooph downstaging)
     if temp_age_no_ovaries != temp_age_survey:
         
         #When everyone has set HSBO age, only apply intervention staging to the year of HSBO
@@ -146,6 +146,8 @@ def build_event_df(run_spec, params):
                      'oc risk'] = 0.0
     else:
         if temp_age_survey < 79 and temp_age_HSBO < 79:
+            event_df.loc[event_df["age"]>=temp_age_survey,
+                        "oc stage dist type"] = "oc stage dist screening"
             event_df.loc[event_df['age'] >= temp_age_HSBO,
                          'oc stage dist type'] = 'oc stage dist intervention'
             event_df.loc[event_df['age'] > temp_age_HSBO,

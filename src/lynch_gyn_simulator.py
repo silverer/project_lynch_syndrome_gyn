@@ -80,6 +80,7 @@ def create_t_matrix(run_spec, params = ps.PARAMS, time = ps.time,
         # define risk_probs
         age = t + age_0
         oc_stage_type = EVENTS.loc[age, 'oc stage dist type']
+        
         ec_stage_type = EVENTS.loc[age, 'ec stage dist type']
         
         HSBO_death_risk = EVENTS.loc[age, 'HSBO_death_risk']
@@ -637,18 +638,18 @@ def run_markov_simple(run_spec, params = ps.PARAMS):
 '''
 TEST PARAMS
 '''
-# =============================================================================
+#=============================================================================
 # temp_params = ps.PARAMS.copy()
-# temp_params.loc['ec lifetime risk'] = 4
+# #temp_params.loc['ec lifetime risk'] = 4
 # run_spec = ps.run_type('MLH1', age_surgery = 50, age_survey = 35)
 # print(run_spec.label)
 # dmat, tmat = run_markov_simple(run_spec, params = temp_params)
-# 
-# 
+# print("done w first test case")
+
 # run_spec1 = ps.run_type('MLH1', age_surgery = 50, age_survey = 35)
 # print(run_spec1.label)
 # dmat1, tmat1 = run_markov_simple(run_spec1)
-# =============================================================================
+#=============================================================================
 #dmat.to_csv('test_comps_2.csv')
 #filenames specifies paths to D_matrices
 #col_names specifies the outcome to graph

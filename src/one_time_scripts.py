@@ -151,6 +151,6 @@ def generate_cost_sens_params(costs = ps.raw_costs):
 #oc, ec = create_risk_spreadsheet()
 #dist = generate_sens_params(plot_params=['risk oc tubal ligation'])
 #print(len(dist))
-#generate_cost_sens_params()
+generate_cost_sens_params()
 
 

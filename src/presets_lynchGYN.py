@@ -27,8 +27,8 @@ dump = data_io.OUTPUT
 dump_psa = data_io.OUTPUT_PSA
 dump_figs = data_io.OD_FIGS
 #also define the version name to append to output files
-sim_version = '_12_16_20'
-icer_version = '_12_16_20'
+sim_version = '_05_20_21'
+icer_version = '_05_20_21'
 
 #Filenames set naming conventions for all outputs
 FILE_NAMES = pd.read_csv(data_io.F_NAMES)
@@ -191,25 +191,15 @@ life_table_r.rename(columns = {'p_death':'r_death'}, inplace = True)
 PARAMS = pd.read_excel(model_params, sheet_name = 'params', index_col = 0)
 
 #Reformat stage distributions so that they're lists instead of strings
-PARAMS.at['oc stage dist nat hist', 
-          'value'] = dm.cell_to_list(PARAMS.loc['oc stage dist nat hist', 'value'])
-PARAMS.at['ec stage dist nat hist', 
-          'value'] = dm.cell_to_list(PARAMS.loc['ec stage dist nat hist', 'value'])
-PARAMS.at['oc stage dist intervention', 
-          'value'] = dm.cell_to_list(PARAMS.loc['oc stage dist intervention', 'value'])
-PARAMS.at['ec stage dist intervention', 
-          'value'] = dm.cell_to_list(PARAMS.loc['ec stage dist intervention', 'value'])
-
+for i in PARAMS.index:
+    if "stage dist" in i:
+        PARAMS.at[i, "value"] = dm.cell_to_list(PARAMS.loc[i, 'value'])
 
 PARAMS_PSA = pd.read_excel(model_params, sheet_name = 'params_PSA', index_col = 0)
-PARAMS_PSA.at['oc stage dist nat hist', 
-              'value'] = dm.cell_to_list(PARAMS_PSA.loc['oc stage dist nat hist', 'value'])
-PARAMS_PSA.at['ec stage dist nat hist', 
-              'value'] = dm.cell_to_list(PARAMS_PSA.loc['ec stage dist nat hist', 'value'])
-PARAMS_PSA.at['oc stage dist intervention', 
-              'value'] = dm.cell_to_list(PARAMS_PSA.loc['oc stage dist intervention', 'value'])
-PARAMS_PSA.at['ec stage dist intervention', 
-              'value'] = dm.cell_to_list(PARAMS_PSA.loc['ec stage dist intervention', 'value'])
+for i in PARAMS_PSA.index:
+    if "stage dist" in i:
+        PARAMS_PSA.at[i, "value"] = dm.cell_to_list(PARAMS_PSA.loc[i, 'value'])
+
 
 #FORMATTED_PARAMS = dict(zip(PARAMS.index.to_list(), PARAMS.formatted_param.to_list()))
 
