@@ -39,7 +39,7 @@ for (dirpath, dirnames, filenames) in os.walk(INPUT):
     for f in filenames:
         if f.startswith('model_input') and str(f[0]) != '~' and f.endswith("xls"):
             MODEL_PARAMS = INPUT/f
-        if f.startswith('cancer_risk_rang') and str(f[0]) != '~' and f.endswith("xls"):
+        if f.startswith('cancer_risk_rang') and str(f[0]) != '~' and f.endswith("xlsx"):
             CANCER_RISK_RANGE = INPUT/f
             #print(f)
         if f.startswith('raw_cancer') and str(f[0]) != '~' and f.endswith("xls"):

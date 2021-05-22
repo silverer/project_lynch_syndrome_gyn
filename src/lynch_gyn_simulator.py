@@ -6,6 +6,7 @@ Created on Fri Jun 21 13:08:29 2019
 """
 
 import pandas as pd
+import openpyxl
 import numpy as np
 import simulator_helper_fxns as fxns
 import probability_functions_lynchGYN as pf

@@ -1262,11 +1262,11 @@ def graph_eff_frontiers(icer_table_og, together = False):
             plt.legend(loc = 'center left', bbox_to_anchor = (1, .5))
             plt.title(f"Efficiency Frontier: $\it{ps.GENES[i]}$")
             if ps.SAVE_FIGS:
-                fname = f"{ps.GENES[i]}_eff_frontier{ps.icer_version}.png"
+                fname = f"{ps.GENES[i]}_eff_frontier{ps.icer_version}.eps"
                 plt.savefig(fname, dpi = 300, bbox_inches = 'tight')
                 
             plt.tight_layout()
-            plt.show()
+            #plt.show()
     if together:
         strats = icer_table['strategy'].drop_duplicates().to_list()
         legend_elements = []
@@ -1279,10 +1279,10 @@ def graph_eff_frontiers(icer_table_og, together = False):
         plt.suptitle('Efficiency Frontiers by Gene', y = 1.01, x = 0.4)
         plt.tight_layout()
         if ps.SAVE_FIGS:
-            plt.savefig(ps.dump_figs/f'eff_frontiers_all_genes{ps.icer_version}.png',
+            plt.savefig(ps.dump_figs/f'eff_frontiers_all_genes{ps.icer_version}.eps',
                         dpi = 400, bbox_inches = 'tight')
         
-        plt.show()
+        #plt.show()
         
 
 def create_bc_ax_qalys_cancer(gene_df_og, ax, sub_ax):
@@ -1361,6 +1361,7 @@ def create_bc_ax_qalys_cancer_bw(gene_df_og, ax, sub_ax):
                 label = 'Cancer Incidence')
     sub_ax.yaxis.label.set_color('k')
     return ax, sub_ax
+
 from matplotlib.lines import Line2D
 def plot_basecase(output_df_og, together = False, column = ps.QALY_COL,
                   select_strats = True, bw = True):
@@ -1370,12 +1371,12 @@ def plot_basecase(output_df_og, together = False, column = ps.QALY_COL,
         
     if ps.EXCLUDE_NH:
         output_df = output_df[output_df['strategy'] != 'Nat Hist']
-        fname = f'qalys_cancer_incidence{ps.icer_version}.jpg'
+        fname = f'qalys_cancer_incidence{ps.icer_version}.eps'
     else:
         if bw:
-            fname = f'qalys_cancer_incidence{ps.icer_version}_with_nh_bw.jpg'
+            fname = f'qalys_cancer_incidence{ps.icer_version}_with_nh_bw.eps'
         else:
-            fname = f'qalys_cancer_incidence{ps.icer_version}_with_nh.jpg'
+            fname = f'qalys_cancer_incidence{ps.icer_version}_with_nh.eps'
     
     output_df['strategy'] = output_df['strategy'].map(ps.STRATEGY_DICT)
     
@@ -1420,12 +1421,12 @@ def plot_basecase(output_df_og, together = False, column = ps.QALY_COL,
             ax, sub_ax = create_bc_ax_qalys_cancer(temp, ax, sub_ax)
             plt.title(f"QALYs and Cancer Incidence by Strategy: $\it{ps.GENES[i]}$")
             if ps.SAVE_FIGS:
-                fname = f'qalys_cancer_incidence_{ps.GENES[i]}{ps.icer_version}.png'
+                fname = f'qalys_cancer_incidence_{ps.GENES[i]}{ps.icer_version}.eps'
                 plt.savefig(ps.dump_figs/fname, dpi = 300, 
                             bbox_inches = 'tight')
                 
             plt.tight_layout()
-            plt.show()
+            #plt.show()
             
     if together:
         plt.suptitle(f"QALYs and Cancer Incidence by Strategy", y = 1.03)
@@ -1434,11 +1435,10 @@ def plot_basecase(output_df_og, together = False, column = ps.QALY_COL,
         if ps.SAVE_FIGS:
             
             plt.savefig(ps.dump_figs/fname, bbox_inches = 'tight', dpi = 300)
-        plt.show()
+        #plt.show()
         
 
-#df = pd.read_csv(ps.dump/f"icers_w_dominated_all_genes{ps.icer_version}.csv")
-#plot_basecase(df, together = True, bw=True)
+
 
 def build_outputs_ax(df_dict, ax, gene, col):
     temp = df_dict.copy()
@@ -1499,7 +1499,7 @@ def plot_outputs_four_panel(df_dict = 'none', outcome_col = 'Cancer Incidence',
         png_name = f'all_genes_{outcome_col}{ps.sim_version}.png'
         
         plt.savefig(ps.dump_figs/png_name, dpi = 200, bbox_inches = 'tight')
-    plt.show()
+    #plt.show()
 
 
 
@@ -1535,7 +1535,7 @@ def plot_cancer_inc_mort(df_dict = 'none'):
     if ps.SAVE_FIGS:
         plt.savefig(ps.dump_figs/f'cancer_inc_mort{ps.icer_version}.png',
                     dpi = 300, bbox_inches = 'tight')
-    plt.show()
+    #plt.show()
 
 
 #plot_cancer_inc_mort()
@@ -1592,7 +1592,7 @@ def plot_nat_hist_outputs(df_container = 'none', outcome_cols = ['OC incidence',
                        'MSH6': 'c',
                        'PMS2': 'b'}
     for col in outcome_cols:
-        ax = plt.subplot(111)
+        ax = plt.subplot()
         plt.xlabel('Age')
         
         plt.ylabel(col)
@@ -1611,11 +1611,11 @@ def plot_nat_hist_outputs(df_container = 'none', outcome_cols = ['OC incidence',
                     
                 elif 'OC' in col:
                     cancer_type = 'OC'
-                sheet = this_label + '_' + cancer_type
-                targets = pd.read_excel(ps.risk_data, sheet_name = sheet)
-                
+                sheet = this_label + cancer_type
+                targets = pd.read_excel(ps.raw_risk_data, sheet_name = sheet)
                 target_ages = targets['age'].values
-                target_percents = targets['0'].values * 100
+                colname = f"reported_risk_{cancer_type}"
+                target_percents = targets[colname].values * 100
                 new_label = f'Target incidence: $\it{this_label}$'
                 ax.plot(target_ages, target_percents, label=new_label,
                         color = gene_color_dict[this_label], linestyle = 'dashed')
@@ -1627,9 +1627,10 @@ def plot_nat_hist_outputs(df_container = 'none', outcome_cols = ['OC incidence',
         box = ax.get_position()
         ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
         ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        png_name = f'{title}{ps.sim_version}.png'
+        png_name = f'{title}{ps.sim_version}.eps'
         plt.savefig(ps.dump_figs/png_name, dpi = 200, bbox_inches = 'tight')
-        plt.show()
+        #plt.show()
+        ax.clear()
         
 #plot_nat_hist_outputs()   
         

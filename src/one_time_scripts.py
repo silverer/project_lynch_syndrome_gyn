@@ -9,7 +9,7 @@ import presets_lynchGYN as ps
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-
+import openpyxl
     
     
 def define_risk(risk_index, old_oc_df, old_ec_df, gene):
@@ -47,7 +47,7 @@ def create_risk_spreadsheet():
     for i in old_risk_index:
         risk_index.append(str(int(i)))
     writer = pd.ExcelWriter(ps.data_repo/'cancer_risk_ranges.xlsx', 
-                            engine='xlsxwriter')
+                            engine='openpyxl')
     
     for gene in ps.GENES:
         i = 0
@@ -77,7 +77,7 @@ def create_risk_spreadsheet():
     # Close the Pandas Excel writer and output the Excel file.
     writer.close()
     return risk_oc_df, risk_ec_df
-
+#create_risk_spreadsheet()
 def beta_dist(mean, sd):
     alpha = ((1 - mean)/sd - 1/mean)**2
     beta = alpha * (1/mean - 1)
@@ -151,6 +151,6 @@ def generate_cost_sens_params(costs = ps.raw_costs):
 #oc, ec = create_risk_spreadsheet()
 #dist = generate_sens_params(plot_params=['risk oc tubal ligation'])
 #print(len(dist))
-generate_cost_sens_params()
+#generate_cost_sens_params()
 
 

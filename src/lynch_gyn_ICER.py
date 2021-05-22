@@ -844,7 +844,9 @@ def run_analysis_and_graph(col = ps.QALY_COL, save_dfs = False,
     pp.graph_eff_frontiers(icers, together = True)
     icers_formatted = pp.format_all_numbers(icers)
     icers_formatted.to_csv(ps.dump/f"{ps.F_NAME_DICT['BC_FMT_ICERS_W_DOM']}{ps.icer_version}.csv")
-    #pp.plot_basecase(outputs, col)
+    #df = pd.read_csv(ps.dump/f"icers_w_dominated_all_genes{ps.icer_version}.csv")
+    #plot_basecase(df, together = True, bw=True)
+    pp.plot_basecase(outputs, together = True, bw=True)
     return icers
 
     
@@ -874,8 +876,8 @@ def main():
     
     if run_type == 'base case':
         #save dfs indicates whether the distribution matrices for 4 genes X 12 strategies should be saved
-        run_analysis_and_graph(save_dfs = True, plot_secondary = True,
-                               skip_iterate = False)
+        run_analysis_and_graph(save_dfs = False, plot_secondary = True,
+                               skip_iterate = True)
         
     elif run_type == 'thresh':
         if thresh_type == 'util':
