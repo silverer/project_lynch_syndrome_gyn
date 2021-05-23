@@ -141,7 +141,7 @@ def generate_cost_sens_params(costs = ps.raw_costs):
     temp = temp.set_index(temp['param'])
     for i in temp.index:
         shape, scale = get_gamma_params(temp.loc[i, 'cost'],
-                                        temp.loc[i, 'cost'] * .2)
+                                        temp.loc[i, 'cost'] * .3)
         temp.loc[i, 'gamma_shape'] = shape
         temp.loc[i, 'gamma_scale'] = scale
     temp.to_csv(ps.data_repo/'cost_params_temp.csv')

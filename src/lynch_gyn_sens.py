@@ -618,6 +618,8 @@ def check_gamma_dist(params, val, sample_size = 10000, seed = time.time()):
     
     dist[dist > params.loc[val, 'up_bound']] = params.loc[val, 'cost']
     dist[dist < params.loc[val, 'low_bound']] = params.loc[val, 'cost']
+    if len(dist) > sample_size:
+        dist = dist[np.random.choice(dist.shape[0], sample_size, replace = False)]
     return dist
 
 #change_df 
@@ -643,8 +645,12 @@ def generate_cost_PSA_inputs(sample_size, seed = time.time()):
     dist_df.to_csv(ps.dump_psa/fname)
     return dist_df
 
-#test_out = generate_cost_PSA_inputs(10, 123)
-#print(test_out)
+# test_out = generate_cost_PSA_inputs(100, 123)
+# print(test_out)
+# for c in test_out.columns:
+#     plt.hist(test_out[c])
+#     plt.show()
+# print("all done")
 def set_new_costs(**kwargs):
     #choose_end implies OWSA
     if 'choose_end' in kwargs:

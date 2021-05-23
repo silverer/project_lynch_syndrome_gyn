@@ -869,7 +869,7 @@ def main():
     PSA: Probabilistic sensitivity analysis. This should be run from the
             command line.
     '''
-    run_type = 'thresh'
+    run_type = 'PSA'
     thresh_type = 'risk ac death oc surg'
     run = True
     plot = True
@@ -920,8 +920,12 @@ def main():
         #sample_size should be divisible by the number of CPU's
         #in each loop, n = sample_size samples will be run, but they'll be distributed
         #across n = core_num number of cores
-        sample_size = 96
-        loops = 106
+        # sample_size = 96
+        # loops = 106
+        # target_sample_size = 10000
+        sample_size = 16
+        loops = 4
+        target_sample_size = sample_size*loops
         if mp.cpu_count() >= 32:
             core_num = 32
             print('running on 32 cores')
@@ -967,8 +971,8 @@ def main():
         
         all_outputs['strategy'] = all_outputs['strategy'].map(ps.STRATEGY_DICT)
         all_ids = all_outputs['new_id'].drop_duplicates().to_list()
-        if len(all_ids) > 10000:
-            small_outputs = pp.select_subsample_psa(all_outputs)
+        if len(all_ids) > target_sample_size:
+            small_outputs = pp.select_subsample_psa(all_outputs, sample = target_sample_size)
             small_fname = (f"{ps.F_NAME_DICT['PSA_ID_SUB']}"+
                               f"{ps.icer_version}.csv")
             
@@ -980,7 +984,8 @@ def main():
         result_types = ['icer', 'qalys']
         for r in result_types:
             pp.process_psa_results(small_outputs, result_type = r, 
-                                   show_plot = False)
+                                    target_sample_size=target_sample_size,
+                                    show_plot = False)
         end = time.time()
         print('time to run psa: ', (end-start)/60)
         

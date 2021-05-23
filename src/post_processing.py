@@ -365,7 +365,7 @@ def graph_wtp_threshs(ceac_df_og, together = True, show = True):
                        bbox_to_anchor = (1, 0.5))
             plt.title(f'Cost-Effectiveness Acceptability Curve: $\it{ps.GENES[i]}$')
             if ps.SAVE_FIGS:
-                plt.savefig(ps.dump_psa/f'ce_acceptability{ps.GENES[i]}.png', 
+                plt.savefig(ps.dump_psa/f'ce_acceptability{ps.GENES[i]}{ps.icer_version}.png', 
                             dpi = 300,
                             bbox_inches = 'tight')
             if show:
@@ -386,7 +386,7 @@ def graph_wtp_threshs(ceac_df_og, together = True, show = True):
                      x = 0.45)
         plt.tight_layout()
         if ps.SAVE_FIGS:
-            plt.savefig(ps.dump_psa/'ce_acceptability_all_genes.png', 
+            plt.savefig(ps.dump_psa/f'ce_acceptability_all_genes{ps.icer_version}.png', 
                         dpi = 300,
                         bbox_inches = 'tight')
         if show:
@@ -483,7 +483,7 @@ def plot_psa_results_circle_icer(df_og, show = True):
     plt.suptitle('Probabilistic Sensitivity Analysis:\nResults from 10,000 Simulations', 
                  x = .35, y = 1.05)
     if ps.SAVE_FIGS:
-        plt.savefig(ps.dump_psa/'psa_results_pies_icers.png',
+        plt.savefig(ps.dump_psa/f'psa_results_pies_icers{ps.icer_version}.png',
                     bbox_inches = 'tight', dpi = 300)
     if show:
         plt.show()
@@ -496,7 +496,7 @@ def plot_psa_results_circle_icer(df_og, show = True):
 #Handles all plotting and post-processing for PSA outputs
 #Note: can pass a post-processed version with IDs and ICERs calculated to speed processing
 def process_psa_results(full_outputs_og, result_type = 'icer', 
-                        show_plot = True, target_sample_size = 10000):
+                        show_plot = False, target_sample_size = 10000):
     full_outputs = full_outputs_og.copy()
     
     dt = datetime.datetime.now()
