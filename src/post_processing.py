@@ -919,10 +919,84 @@ def format_percent(x):
     x = '{:.2%}'.format(x)
     return x
 
+#Get the comparator and optimal strategies from threshold analyses
+def get_comparator_optim_strats_oneway(df_og):
+    df = df_og.reset_index(drop = True)
+    
+    df['strategy'] = df['strategy'].map(ps.STRATEGY_DICT)
+    
+    df['param value'] = df['param value'].astype(float)
+    og_changed_param = df.loc[0, 'changed param']
+    changed_param = ps.FORMATTED_PARAMS[og_changed_param]
+    if 'oc lifetime' in og_changed_param:
+        df['param value'] = df['lifetime oc risk'].astype(float)
+        
+    elif 'ec lifetime' in og_changed_param:
+        df['param value'] = df['lifetime ec risk'].astype(float)
+    df = df.loc[df["changed param"]==og_changed_param, :]
+    temp_changed_param = changed_param
+    strategy_genes = pd.DataFrame()
+    tracker = 0
+    for i in range(0, len(ps.GENES)):
+        temp = df[df['gene'] == ps.GENES[i]]
+        #get param vals to set x axis labels
+        param_vals = temp['param value'].drop_duplicates().to_list()
+        temp = temp.dropna(subset=[ps.ICER_COL])
+        #Exclude ICERs > $100000 WTP
+        temp = temp[temp[ps.ICER_COL] <= 100000]
+        temp_params = temp.sort_values(by=[ps.ICER_COL], 
+                                 ascending = False).groupby(['param value']).head(2)
+        comparator_strats = []
+        for p in param_vals:
+            param_best = temp_params.loc[temp_params["param value"]==p,:]
+            param_best = param_best.drop_duplicates(subset = ["strategy"])
+            param_best = param_best.reset_index(drop = True)
+            if len(param_best)>1 and param_best.loc[0, "strategy"] == param_best.loc[1, "strategy"]:
+                print("err")
+            if len(param_best) > 1:
+                this_label = param_best.loc[0, "strategy"] + " vs. " + param_best.loc[1, "strategy"]
+            else:
+                this_label = param_best.loc[0, "strategy"] + " (No Comparator)"
+            
+            comparator_strats.append(this_label)
+        comparator_strats = np.unique(comparator_strats).tolist()
+        for k in range(0, len(comparator_strats)):
+            strategy_genes.loc[tracker, "gene"] = ps.GENES[i]
+            strategy_genes.loc[tracker, "comparator_strats"] = comparator_strats[k]
+            tracker += 1
+    return strategy_genes
+
+def comparator_str_wrapper():
+    file_list = []
+    for (dirpath, dirnames, filenames) in os.walk(ps.dump):
+        for filename in filenames:
+            if filename.startswith("threshold_icers") and filename.endswith(f"{ps.icer_version}.csv"): 
+                file_list.append(filename)
+    all_strat_genes = pd.DataFrame()
+    for f in file_list:
+        df = pd.read_csv(ps.dump/f)
+        if "lifetime risk" in df.loc[0, "changed param"]:
+            df_ec = df.loc[df["changed param"]=="ec lifetime risk", :]
+            df_ec = df_ec.reset_index(drop = True)
+            res = get_comparator_optim_strats_oneway(df_ec)
+            all_strat_genes = pd.concat([all_strat_genes, res], ignore_index=True)
+            df_oc = df.loc[df["changed param"]=="oc lifetime risk", :]
+            df_oc = df_oc.reset_index(drop = True)
+            res = get_comparator_optim_strats_oneway(df_oc)
+            all_strat_genes = pd.concat([all_strat_genes, res], ignore_index=True)
+        else:
+            res = get_comparator_optim_strats_oneway(df)
+            all_strat_genes = pd.concat([all_strat_genes, res], ignore_index=True)
+    all_strat_genes = all_strat_genes.drop_duplicates(subset = ["comparator_strats"])
+    all_strat_genes.to_csv(ps.data_repo/"comparator_strats.csv", index = False)
+#comparator_str_wrapper()
+
 def plot_one_way_optim(df_og):
     
     df = df_og.reset_index(drop = True)
-    
+    comparator_strat_markers = pd.read_csv(ps.data_repo/"comparator_strats_markers.csv")
+    comparator_strat_markers = dict(zip(comparator_strat_markers["comparator_strats"].to_list(),
+                                        comparator_strat_markers["marker"].to_list()))
     df['strategy'] = df['strategy'].map(ps.STRATEGY_DICT)
     df['marker'] = df['strategy'].map(ps.MARKER_DICT)
     df['color'] = df['strategy'].map(ps.COLOR_DICT)
@@ -931,19 +1005,18 @@ def plot_one_way_optim(df_og):
     changed_param = ps.FORMATTED_PARAMS[og_changed_param]
     if 'oc lifetime' in og_changed_param:
         df['param value'] = df['lifetime oc risk'].astype(float)
+        
     elif 'ec lifetime' in og_changed_param:
         df['param value'] = df['lifetime ec risk'].astype(float)
+    
+    df = df.loc[df["changed param"]==og_changed_param, :]
     #set up 4-panel figure
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2,
                                                   figsize = (11, 9))
     ax_array = [ax1, ax2, ax3, ax4]
-    all_strats = []
-    all_markers = []
-    # if changed_param == 'U Hysterectomy':
-    #     temp_changed_param = 'U Hysterectomy (Post-op w/o Menopause)'
-    # else:
-    #     temp_changed_param = changed_param
+    
     temp_changed_param = changed_param
+    strategy_genes = {}
     for i in range(0, len(ps.GENES)):
         temp = df[df['gene'] == ps.GENES[i]]
         #get param vals to set x axis labels
@@ -951,21 +1024,39 @@ def plot_one_way_optim(df_og):
         temp = temp.dropna(subset=[ps.ICER_COL])
         #Exclude ICERs > $100000 WTP
         temp = temp[temp[ps.ICER_COL] <= 100000]
+        temp_params = temp.sort_values(by=[ps.ICER_COL], 
+                                 ascending = False).groupby(['param value']).head(2)
         temp = temp.sort_values(by=[ps.ICER_COL], 
                                  ascending = False).groupby(['param value']).head(1)
-         
-        strats = temp['strategy'].drop_duplicates().to_list()
-        print(strats)
-        for s in strats:
-            temp_strat = temp[temp['strategy'] == s]
-            if s not in all_strats:
-                all_strats.append(s)
-                all_markers.append(ps.MARKER_DICT[s])
+        strats = []
+        comparator_strats = []
+        marker_strats = []
+        comp_pretty = []
+        #create unique markers for each set of strategies vs. comparators
+        for p in param_vals:
+            param_best = temp_params.loc[temp_params["param value"]==p,:]
+            param_best = param_best.drop_duplicates(subset = ["strategy"])
+            param_best = param_best.reset_index(drop = True)
+            if len(param_best) > 1:
+                this_label = param_best.loc[0, "strategy"] + " vs. " + param_best.loc[1, "strategy"]
+                comp_pretty.append(param_best.loc[0, "strategy"] + "\nvs. " + param_best.loc[1, "strategy"])
+            else:
+                this_label = param_best.loc[0, "strategy"] + " (No Comparator)"
+                comp_pretty.append(param_best.loc[0, "strategy"] + "\n(No Comparator)")
+
+            temp.loc[temp["param value"]==p, "comparator_strat"] = this_label
+            comparator_strats.append(this_label)
+            marker_strats.append(comparator_strat_markers[this_label])
+        marker_strats = np.unique(marker_strats).tolist()
+        comparator_strats = np.unique(comparator_strats).tolist()
+        comp_pretty = np.unique(comp_pretty).tolist()
+        for k in range(0, len(comparator_strats)):
+            temp_strat = temp[temp['comparator_strat'] == comparator_strats[k]]
             ax_array[i].scatter(temp_strat['param value'],
                                  temp_strat[ps.ICER_COL],
-                                 marker = ps.MARKER_DICT[s],
-                                 color = 'k', label = s)
-        #ax_array[i].set_xticks(param_vals)
+                                 marker=marker_strats[k],
+                                 color = 'k', label = comparator_strats[k])
+        
         ax_array[i].set_xlabel(f'Value of {temp_changed_param}')
         ax_array[i].set_ylabel('ICER')
         
@@ -975,179 +1066,44 @@ def plot_one_way_optim(df_og):
         ax_array[i].set_title(title)
         for k in range(0, len(param_vals)):
              param_vals[k] = round(param_vals[k], 3)
-        #ax_array[i].set_xticklabels(param_vals, rotation = 90)
-     #Create the legend    
-    legend_elements = []
-    for s in all_strats:
-        legend_elements.append(mlines.Line2D([], [], color='black', 
-                                 marker=ps.MARKER_DICT[s], linestyle='None',
-                                 markersize=10, label=s))
-         
-    plt.legend(handles = legend_elements, loc = 'center left',
-                bbox_to_anchor = (1, 1))  
-    
+        legend_elements = []
+        for k in range(0, len(marker_strats)):
+            legend_elements.append(mlines.Line2D([], [], color='black', 
+                                    marker=marker_strats[k], linestyle='None',
+                                    markersize=10, label=comp_pretty[k]))
+            
+        ax_array[i].legend(handles = legend_elements, framealpha=0.1,edgecolor="grey") 
     plt.suptitle((f"One-Way Sensitivity Analysis:\nImpact of {temp_changed_param}"+
                   " on ICERs"),
-                  y = 1.05, x = 0.45)
+                  y = 1.01, x = 0.5)
     plt.tight_layout()
     if ps.SAVE_FIGS:
-        fname = f'owsa_{og_changed_param}_icers.png'
+        fname = f'owsa_{og_changed_param}_icers{ps.icer_version}.png'
         plt.savefig(ps.dump_figs/fname, bbox_inches = 'tight',
                      dpi = 300)
-    plt.show()
-    
-#df = pd.read_csv(ps.dump/'threshold_icers_U hysterectomy_all_genes_03_25_20_nh.csv')
-#plot_one_way_optim(df)
+    #plt.show()
 
-def plot_one_way_by_var(df_og):
-    bc_optimal = sim.load_bc(return_strategies = True,
-                         return_comparator = True)
-    
-    df = df_og.copy()
-    df['strategy'] = df['strategy'].map(ps.STRATEGY_DICT)
-    df = df.reset_index(drop = True)
-    og_changed_param = df.loc[0, 'changed param']
-    key_param = og_changed_param
-    changed_param = ps.FORMATTED_PARAMS[key_param]
-    #set up 4-panel figure
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2,
-                                                 figsize = (11, 9))
-    ax_array = [ax1, ax2, ax3, ax4]
-    
-    for i in range(0, len(ps.GENES)):
-        temp = df[df['gene'] == ps.GENES[i]]
-        #get param vals to set x axis labels
-        param_vals = temp['param value'].drop_duplicates().to_list()
-        temp = temp.dropna(subset=[ps.ICER_COL])
-        #get the basecase optimal strategy and comparator
-        strats_optim = bc_optimal[ps.GENES[i]]
-        if len(strats_optim) > 1:
-            comp = strats_optim[1]
-            comparator = ps.STRATEGY_DICT[comp]
+
+def plot_all_threshold_analyses():
+    file_list = []
+    for (dirpath, dirnames, filenames) in os.walk(ps.dump):
+        for filename in filenames:
+            if filename.startswith("threshold_icers") and filename.endswith(f"{ps.icer_version}.csv"): 
+                file_list.append(filename)
+    all_strat_genes = pd.DataFrame()
+    for f in file_list:
+        df = pd.read_csv(ps.dump/f)
+        if "lifetime risk" in df.loc[0, "changed param"]:
+            df_ec = df.loc[df["changed param"]=="ec lifetime risk", :]
+            df_ec = df_ec.reset_index(drop = True)
+            plot_one_way_optim(df_ec)
+            df_oc = df.loc[df["changed param"]=="oc lifetime risk", :]
+            df_oc = df_oc.reset_index(drop = True)
+            plot_one_way_optim(df_oc)
         else:
-            comp = strats_optim[0]
-            
-        comparator = ps.STRATEGY_DICT[comp]
-        pretty_optimal = ps.STRATEGY_DICT[strats_optim[0]]
-        #get the icers when BC optimal strategy is on the eff frontier
-        temp = temp[temp['strategy'] == pretty_optimal]
-        
-        temp['color'] = temp['strategy'].map(ps.COLOR_DICT)
-        temp['param value'] = temp['param value'].astype(float)
-        temp = temp.sort_values(by = ['param value'], ascending = False)
-        
-        temp.reset_index(drop =True, inplace=True)
-        temp['markers'] = temp['strategy'].map(ps.MARKER_DICT)
-        ax_array[i].plot(temp['param value'], temp[ps.ICER_COL],
-                        label = bc_optimal[ps.GENES[i]], 
-                        color = temp.loc[0, 'color'], marker = 'o')
-        #If there's no comparator (e.g., PMS2), then set title accordingly
-        if pretty_optimal == comparator:
-            title = f"$\it{ps.GENES[i]}$\n({pretty_optimal}, No Comparator)"
-        else:
-            title = f"$\it{ps.GENES[i]}$\n({pretty_optimal} vs. {comparator})"
-        ax_array[i].set_title(title)
-        ax_array[i].set_xlabel(f'Value of {changed_param}')
-        ax_array[i].set_ylabel('ICER')
-        
-        if ps.GENES[i] == 'MSH2':
-            top_val = max(temp[ps.ICER_COL])+100000
-        else:
-            top_val = max(temp[ps.ICER_COL])+10000
-        if top_val < 100000:
-            top_val = 105000
-        ax_array[i].set_ylim(bottom = min(temp[ps.ICER_COL])-5000,
-                            top = top_val)
-        
-        for k in range(0, len(param_vals)):
-            param_vals[k] = round(param_vals[k], 3)
-            
-        ax_array[i].set_xticks(param_vals)
-        ax_array[i].set_xticklabels(param_vals, rotation = 90)
-        ax_array[i].axhline(y = 100000, linestyle = '--', c = 'gray')
-        
-    temp_bc_optimal = {}
-    strats = []
-    for key in bc_optimal.keys():
-        temp_bc_optimal[key] = bc_optimal[key][0]
-        if ps.STRATEGY_DICT[temp_bc_optimal[key]] not in strats:
-            strats.append(ps.STRATEGY_DICT[temp_bc_optimal[key]])
-            
-    legend_elements = []
-    for s in strats:
-        legend_elements.append(Patch(facecolor = ps.COLOR_DICT[s],
-                                     label = s))
-    legend_elements.append(mlines.Line2D([], [], color='gray', 
-                                         linestyle='--',
-                                         label='WTP'))
-        
-    plt.legend(handles = legend_elements, bbox_to_anchor = (1, 0.5),
-               loc = 'center left')
-    plt.suptitle(f"One-Way Sensitivity Analysis:\nImpact of {changed_param} on ICERs",
-                 y = 1.05, x = 0.45)
-    plt.tight_layout()
-    if ps.SAVE_FIGS:
-        fname = f'owsa_{og_changed_param}_icers.png'
-        plt.savefig(ps.dump_figs/fname, bbox_inches = 'tight',
-                    dpi = 300)
-    plt.show() 
-
-
-
-def plot_risk_thresholds(df):
-    rcParams.update({'font.size': 12})
-    df['param value'] = df['param value'].astype(int)
-    
-    df['pretty_strategy'] = df['strategy'].map(ps.STRATEGY_DICT)
-    df['color'] = df['pretty_strategy'].map(ps.COLOR_DICT)
-    risk_types = ['ec lifetime risk', 'oc lifetime risk']
-    vals = ['lifetime ec risk', 'lifetime oc risk']
-    labs = ['Lifetime EC Risk', 'Lifetime OC Risk']
-    for g in ps.GENES:
-        
-        fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(10,8))
-        i = 0
-        ax_array = [ax1, ax2]
-        df_gene = df[df['gene']==g]
-        abs_max = max(df_gene[ps.QALY_COL]) + 0.05
-        abs_min = min(df_gene[ps.QALY_COL]) - 0.05
-        labels = df_gene['pretty_strategy'].drop_duplicates().to_list()
-        colors = df_gene['color'].drop_duplicates().to_list()
-        for i in range(0, len(risk_types)):
-            temp = df_gene[df_gene['changed param']==risk_types[i]]
-            temp.sort_values(by = [vals[i]], inplace=True)
-            temp['percent_risk'] = temp[vals[i]].apply(format_percent)
-            ax_array[i].bar(temp['percent_risk'].astype(str), temp[ps.QALY_COL],
-                            color = temp['color'])
-            bottom = abs_min
-            top = abs_max
-            ax_array[i].set_xticklabels(labels =temp['percent_risk'].astype(str),
-                                        rotation = 90)
-            rcParams.update({'font.size': 12})
-            ax_array[i].set_ylim(top=top, bottom = bottom)
-            ax_array[i].set_ylabel('Total QALYs')
-            ax_array[i].set_xlabel(labs[i])
-            ax_array[i].set_title(labs[i])
-            
-        k = 0
-        for k in range(0, len(labels)):
-            if k == 0:
-                legend_elements = [Patch(facecolor=colors[k], label = labels[k])]
-            else:
-                legend_elements.append(Patch(facecolor=colors[k], label = labels[k]))
-        plt.legend(handles = legend_elements, loc='center left', bbox_to_anchor=(1, .5))
-        plt.suptitle(f"Optimal Strategy and Total QALYs by Cancer Risk Level: $\it{g}$",
-                     y = 1.02, x = 0.45)
-        plt.tight_layout()
-        plt.savefig(ps.dump_figs/f'risk_thresholds_w_Qalys_{g}{ps.icer_version}.png', dpi=200,
-                    bbox_inches='tight')
-        plt.show()
-
-# =============================================================================
-# df = pd.read_csv(ps.dump/'threshold_lifetime risk_02_27_20.csv')
-# plot_risk_thresholds(df)
-# =============================================================================
-        
+            plot_one_way_optim(df)
+#plot_all_threshold_analyses()
+ 
 def plot_risk_thresholds_cancer_incidence(df):
     rcParams.update({'font.size': 12})
     df['param value'] = df['param value'].astype(int)
@@ -1363,12 +1319,11 @@ def create_bc_ax_qalys_cancer_bw(gene_df_og, ax, sub_ax):
     return ax, sub_ax
 
 from matplotlib.lines import Line2D
+
 def plot_basecase(output_df_og, together = False, column = ps.QALY_COL,
                   select_strats = True, bw = True):
     
     output_df = output_df_og.copy()
-    
-        
     if ps.EXCLUDE_NH:
         output_df = output_df[output_df['strategy'] != 'Nat Hist']
         fname = f'qalys_cancer_incidence{ps.icer_version}.eps'
@@ -1433,7 +1388,6 @@ def plot_basecase(output_df_og, together = False, column = ps.QALY_COL,
         
         plt.tight_layout()
         if ps.SAVE_FIGS:
-            
             plt.savefig(ps.dump_figs/fname, bbox_inches = 'tight', dpi = 300)
         #plt.show()
         
@@ -1540,50 +1494,9 @@ def plot_cancer_inc_mort(df_dict = 'none'):
 
 #plot_cancer_inc_mort()
 
-
-
-def plot_risk_by_gene_bar():
-    
-    bars1 = ps.LT_RISKS['EC'].values
-    bars2 = ps.LT_RISKS['OC'].values
-    labels = ["$\it{MLH1}$", "$\it{MSH2}$", "$\it{MSH6}$", "$\it{PMS2}$"]
-    
-    bar_width = 0.25
-    r1 = np.arange(len(bars1))
-    r2 = [x + bar_width for x in r1]
-    ax = plt.subplot(111)
-    
-    ax.bar(r1, bars1, color = 'm', width = bar_width, edgecolor = 'white',
-            label = 'Endometrial')
-    ax.bar(r2, bars2, color = 'c', width = bar_width, edgecolor = 'white',
-            label = 'Ovarian')
-    ax.set_ylim(bottom = 0, top = 60)
-    
-    ax.set_yticklabels(['{:.0f}%'.format(x) for x in ax.get_yticks()])
-    
-    ax.set_xticks([r + (bar_width/2) for r in range(0, len(bars2))])
-    ax.set_xticklabels(labels)
-    for pat in ax.patches:
-        width, height = pat.get_width(), pat.get_height()
-        x, y = pat.get_xy()
-        ax.text(x+(width/2)+.025, y+height+1.5, '{:.0f}%'.format(height),
-                horizontalalignment = 'center',
-                verticalalignment = 'center',
-                size = 14)
-        
-    ax.legend(loc = 'center left', bbox_to_anchor = (1, .5))
-    ax.set_ylabel('Lifetime Risk')
-    ax.set_title('Cumulative Risk of Gynecologic Cancer by\nMismatch Repair (MMR) Gene')
-    fname = 'lifetime_cancer_risk_plot.png'
-    plt.savefig(ps.dump_figs/fname, dpi = 300, bbox_inches = 'tight')
-    plt.show()
-    
-
-#plot_risk_by_gene_bar()
-
 def plot_nat_hist_outputs(df_container = 'none', outcome_cols = ['OC incidence',
                                                                  'EC incidence'], 
-                                             genes = ps.GENES):
+                                             genes = ps.GENES,):
     if type(df_container) == str:
         df_container = sim.load_bc_files()
     x_vals = ps.age_time
@@ -1631,8 +1544,7 @@ def plot_nat_hist_outputs(df_container = 'none', outcome_cols = ['OC incidence',
         plt.savefig(ps.dump_figs/png_name, dpi = 200, bbox_inches = 'tight')
         #plt.show()
         ax.clear()
-        
-#plot_nat_hist_outputs()   
+
         
 def format_decimal(x):
     return("%.2f" % x)

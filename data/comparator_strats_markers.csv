@@ -1,0 +1,11 @@
+comparator_strats,marker
+Hyst-BSO: 40 vs. Hyst-BSO: 35,p
+Two-Stage Approach vs. Hyst-BSO: 40,X
+Hyst-BSO: 35 (No Comparator),o
+Hyst-BSO: 50 (No Comparator),s
+Two-Stage Approach (No Comparator),d
+Hyst-BSO: 40 (No Comparator),^
+No Intervention vs. Hyst-BSO: 50,P
+Hyst-BSO: 50 vs. No Intervention,v
+"Hyst-BSO: 35, Survey: 30 vs. Hyst-BSO: 35",*
+Two-Stage Approach vs. Hyst-BSO: 35,x

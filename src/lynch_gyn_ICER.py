@@ -698,9 +698,9 @@ def get_threshold_outputs(threshold_var = 'lifetime risk', results_file = 0,
             temp_r = r + ' lifetime risk'
             temp = all_ce_results[all_ce_results['changed param'] == temp_r]
             temp['param value'] = temp[f"lifetime {r} risk"]
-            print(len(temp))
-            if r == 'oc':
-                print('check')
+            # print(len(temp))
+            # if r == 'oc':
+            #     print('check')
             pp.plot_one_way_optim(temp)
     else:
         pp.plot_one_way_optim(all_ce_results)
@@ -869,7 +869,7 @@ def main():
     PSA: Probabilistic sensitivity analysis. This should be run from the
             command line.
     '''
-    run_type = 'base case'
+    run_type = 'thresh'
     thresh_type = 'risk ac death oc surg'
     run = True
     plot = True
@@ -880,19 +880,7 @@ def main():
                                skip_iterate = True)
         
     elif run_type == 'thresh':
-        if thresh_type == 'util':
-            changes = ['init HSBO','init hysterectomy', 'HSBO', 'hysterectomy']
-            samp_size = 500
-            util_threshs = get_util_thresholds_mp(utils_to_change = changes, 
-                                                  sample_size = samp_size)
-            util_threshs.to_csv(ps.dump/f'util_thresholds{ps.icer_version}_{samp_size}.csv', 
-                                index = False)
-            print(dt.strftime("%Y-%m-%d %H:%M"), '    finished getting thresholds')
-            
-            if plot:
-                pp.plot_util_thresholds_surgery(util_threshs)
-            
-        elif thresh_type == 'risk':
+        if thresh_type == 'risk':
             if run:
                 risk_threshs = get_threshold_outputs(threshold_var='lifetime risk',
                                                      simulate = True,
@@ -907,8 +895,11 @@ def main():
             if plot:
                 if run == False:
                     risk_threshs = pd.read_csv(ps.dump/f'threshold_icers_lifetime risk_all_genes{ps.icer_version}.csv')
-                pp.plot_risk_thresholds(risk_threshs)
-                pp.plot_risk_thresholds_cancer_incidence(risk_threshs)
+                ec = risk_threshs.loc[risk_threshs["changed param"] == "ec lifetime risk",:]
+                pp.plot_one_way_optim(ec)
+                
+                oc = risk_threshs.loc[risk_threshs["changed param"] == "oc lifetime risk",:]
+                pp.plot_one_way_optim(oc)
         elif 'cost' in thresh_type or 'U' in thresh_type:
             get_threshold_outputs(threshold_var = thresh_type,
                                   simulate = False,
