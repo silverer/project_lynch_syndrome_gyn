@@ -132,6 +132,12 @@ def get_gamma_params(mean, sd):
     shape = mean/scale
     return shape, scale
 
+def test_gamma_dist(shape, scale):
+    #set seed for reproducibility 
+    np.random.seed(123)
+    dist = np.random.gamma(shape, 
+                           scale, 1000)
+    return dist
 
 #This generates distribution parameters for gamma distributions
 #The resulting dataframe should be merged with the "cost" sheet in model_params
@@ -140,10 +146,46 @@ def generate_cost_sens_params(costs = ps.raw_costs):
     temp = costs.copy()
     temp = temp.set_index(temp['param'])
     for i in temp.index:
+        if i == "EC distant" or i == "EC regional" or i == "EC local":
+            mult = 1
+        elif i == "HSBO" or i == "oophorectomy" or i == "surgical comps":
+            mult = 6
+        elif (i == "init EC regional" or 
+                i == "init EC distant"):
+            mult = 5
+        elif i == "init surveillance":
+            mult = 4
+        else:
+            mult = 3
         shape, scale = get_gamma_params(temp.loc[i, 'cost'],
-                                        temp.loc[i, 'cost'] * .3)
+                                        temp.loc[i, 'cost'] * mult)
         temp.loc[i, 'gamma_shape'] = shape
         temp.loc[i, 'gamma_scale'] = scale
+        this_dist = test_gamma_dist(shape, scale)
+        print("*"*30)
+        print(i)
+        while (mult > 0 and (min(this_dist) < temp.loc[i, "low_bound"] and max(this_dist) >temp.loc[i, "up_bound"])):
+            print("resampling")
+            mult -= 0.2
+            shape, scale = get_gamma_params(temp.loc[i, 'cost'],
+                                        temp.loc[i, 'cost'] * mult)
+            this_dist = test_gamma_dist(shape, scale)
+            
+            temp.loc[i, 'gamma_shape'] = shape
+            temp.loc[i, 'gamma_scale'] = scale
+        print("multiplier: ", mult)
+        
+        print("sampled min: ")
+        print(min(this_dist))
+        print("actual min: ")
+        print(temp.loc[i, "low_bound"])
+        print("sampled max: ")
+        print(max(this_dist))
+        print("actual max: ")
+        print(temp.loc[i, "up_bound"])
+        
+        print("*"*30)
+
     temp.to_csv(ps.data_repo/'cost_params_temp.csv')
     return temp
 

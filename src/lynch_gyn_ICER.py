@@ -920,12 +920,10 @@ def main():
         #sample_size should be divisible by the number of CPU's
         #in each loop, n = sample_size samples will be run, but they'll be distributed
         #across n = core_num number of cores
-        # sample_size = 96
-        # loops = 106
-        # target_sample_size = 10000
-        sample_size = 16
-        loops = 4
-        target_sample_size = sample_size*loops
+        sample_size = 96
+        loops = 106
+        target_sample_size = 10000
+        
         if mp.cpu_count() >= 32:
             core_num = 32
             print('running on 32 cores')
