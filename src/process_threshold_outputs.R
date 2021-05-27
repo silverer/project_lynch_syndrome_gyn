@@ -43,7 +43,7 @@ process.thresh.outputs <- function(thresh.outs){
 all.thresh.outs <- data.frame()
 for(t in thresh.vars){
   tmp <- read.csv(paste0("../model_outs/threshold_icers_",
-                         t, "_all_genes_12_16_20.csv"))
+                         t, "_all_genes_05_20_21.csv"))
   if(t == 'lifetime risk'){
     tmp1 <- tmp %>% 
       dplyr::filter(changed.param == 'ec lifetime risk')
@@ -75,5 +75,10 @@ range.by.gene.strat <- range.by.gene.strat %>%
 
 ranges.merged <- left_join(ranges.only, range.by.gene.strat, 
                            by = c("gene", "changed.param", 'pretty_strategy'))
+prettify_range <- function(minval, maxval){
+  return(paste(round(minval, 2), "-", round(maxval, 2)))
+}
+ranges.merged["strat_range"] = mapply(prettify_range, ranges.merged$min.gene.strat, 
+                                      ranges.merged$max.gene.strat)
 
-write.csv(ranges.merged, '../model_outs/threshold_icers_processed_ranges_R_12_16_20.csv')
+write.csv(ranges.merged, '../model_outs/threshold_icers_processed_ranges_R_05_20_21.csv')
