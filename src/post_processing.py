@@ -490,8 +490,6 @@ def plot_psa_results_circle_icer(df_og, show = True):
     else:
         plt.clf()
 
-#df = pd.read_csv(ps.dump_psa/f"icers_all_genes_psa_03_13_20.csv")
-#generate_bc_psa_outputs(df)
 
 #Handles all plotting and post-processing for PSA outputs
 #Note: can pass a post-processed version with IDs and ICERs calculated to speed processing
@@ -572,6 +570,7 @@ def process_psa_results(full_outputs_og, result_type = 'icer',
         return optimal_df
     else:
         bc_df = generate_bc_psa_outputs(full_outputs)
+        bc_df = format_bc_psa_outputs(bc_df)
         fname = f"{ps.F_NAME_DICT['PSA_BC']}_{sample_size}{ps.icer_version}.csv"
         bc_df.to_csv(ps.dump_psa/fname)
         dt = datetime.datetime.now()
@@ -580,11 +579,9 @@ def process_psa_results(full_outputs_og, result_type = 'icer',
         return bc_df
 
 
+# df = pd.read_csv(ps.dump_psa/'icers_all_genes_psa_10000_samples_05_20_21.csv')
 
-
-#df = pd.read_csv(ps.dump_psa/'icers_all_genes_psa_10000_samples_03_25_20_nh.csv')
-
-#process_psa_results(df, result_type = 'basecase')
+# process_psa_results(df, result_type = 'basecase')
 
 
 '''
